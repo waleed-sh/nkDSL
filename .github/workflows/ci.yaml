@@ -21,16 +21,19 @@ jobs:
             os: ubuntu-latest
             python-version: "3.11"
             kind: "main"
+            artifact_name: "coverage-ubuntu-unit-integration-physics"
 
           - name: "macOS (unit/integration/physics)"
             os: macos-latest
             python-version: "3.11"
             kind: "main"
+            artifact_name: "coverage-macos-unit-integration-physics"
 
           - name: "Doctests"
             os: ubuntu-latest
             python-version: "3.11"
             kind: "doctest"
+            artifact_name: "coverage-ubuntu-doctests"
 
     env:
       NKDSL_EXPERIMENTAL: "1"
@@ -67,5 +70,5 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-${{ matrix.name }}
+          name: ${{ matrix.artifact_name }}
           path: coverage.xml
