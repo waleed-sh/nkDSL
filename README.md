@@ -2,6 +2,8 @@
   <img src="docs/_static/nkDSL.png" alt="nkDSL logo" width="400">
 </p>
 
+[![PyPI](https://img.shields.io/pypi/v/nkDSL.svg)](https://pypi.org/project/nkDSL/)
+[![License](https://img.shields.io/github/license/waleed-sh/nkDSL.svg)](https://github.com/waleed-sh/nkDSL/blob/main/LICENSE)
 [![Documentation Status](https://readthedocs.org/projects/nkdsl/badge/?version=latest)](https://nkdsl.readthedocs.io/en/latest/?badge=latest)
 
 # nkDSL
