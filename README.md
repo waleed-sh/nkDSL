@@ -33,10 +33,7 @@ The result is a symbolic operator that can be compiled into a NetKet-compatible 
 
 ## Example: 1D transverse-field Ising model
 
-The example below builds
-\[
-H = -J \sum_{\langle i,j \rangle} \sigma_i^z \sigma_j^z - h \sum_i \sigma_i^x
-\]
+The example below builds $` H = -J \sum_{\langle i,j \rangle} \sigma_i^z \sigma_j^z - h \sum_i \sigma_i^x `$
 for a periodic chain. The diagonal Ising interaction is emitted with an identity update, while the transverse-field term flips one spin at a time.
 
 ```python
