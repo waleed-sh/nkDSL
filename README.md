@@ -1,14 +1,18 @@
 <p align="center">
-  <img src="docs/_static/nkDSL.png" alt="nkDSL logo" width="400">
+  <img src="docs/_static/nkDSL.png" alt="nkDSL logo" width="350">
 </p>
+
+<div align="center">
 
 [![PyPI](https://img.shields.io/pypi/v/nkDSL.svg)](https://pypi.org/project/nkDSL/)
 [![License](https://img.shields.io/github/license/waleed-sh/nkDSL.svg)](https://github.com/waleed-sh/nkDSL/blob/main/LICENSE)
 [![Documentation Status](https://readthedocs.org/projects/nkdsl/badge/?version=latest)](https://nkdsl.readthedocs.io/en/latest/?badge=latest)
 
+</div>
+
 # nkDSL
 
-`nkdsl` is a standalone extraction of the symbolic operator DSL from [neuraLQX](https://www.github.com/waleed-sh/neuraLQX).
+`nkDSL` is a standalone extraction of the symbolic operator DSL from [neuraLQX](https://www.github.com/waleed-sh/neuraLQX).
 It provides a compact, declarative way to define discrete operators in [NetKet](https://github.com/netket/netket) and compile them into executable JAX-backed operator kernels.
 
 > [!WARNING]
@@ -18,7 +22,7 @@ It provides a compact, declarative way to define discrete operators in [NetKet](
 
 ## What it does
 
-With `nkdsl`, you describe an operator in terms of
+With `nkDSL`, you describe an operator in terms of
 
 - **where** to iterate, such as sites, pairs, or user-defined index sets,
 - **when** a branch is active, through symbolic predicates,
