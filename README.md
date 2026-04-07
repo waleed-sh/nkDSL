@@ -2,6 +2,8 @@
   <img src="docs/_static/nkDSL.png" alt="nkDSL logo" width="400">
 </p>
 
+[![Documentation Status](https://readthedocs.org/projects/nkdsl/badge/?version=latest)](https://nkdsl.readthedocs.io/en/latest/?badge=latest)
+
 # nkDSL
 
 `nkdsl` is a standalone extraction of the symbolic operator DSL from [neuraLQX](https://www.github.com/waleed-sh/neuraLQX).
