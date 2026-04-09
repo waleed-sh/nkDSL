@@ -24,3 +24,4 @@ Thumbs.db
 
 .pytest_runtime_cache
 .nkdsl_cache
+.checks
