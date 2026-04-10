@@ -341,3 +341,33 @@ def test_build_compiled_operator_padding_branches():
     xp, m = op.get_conn_padded(x)
     assert xp.shape == (3, 2)
     assert m.shape == (3,)
+
+
+def test_build_compiled_operator_with_custom_connection_method():
+    hi = nk.hilbert.Fock(n_max=2, N=2)
+
+    class _ComputationalLikeOperator:
+        def __init__(self, hilbert):
+            self.hilbert = hilbert
+
+        def get_conn_padded(self, x):
+            return self._get_conn_padded(x)
+
+    def runner_short(x):
+        return jnp.asarray([[x[0], x[1]]]), jnp.asarray([2.0]), jnp.asarray([True])
+
+    op = jl._build_compiled_operator(
+        hi,
+        operator_name="custom",
+        is_hermitian=False,
+        output_dtype=np.float32,
+        term_runners=[runner_short],
+        total_padded_size=1,
+        operator_type=_ComputationalLikeOperator,
+        connection_method="_get_conn_padded",
+    )
+
+    x = jnp.asarray([1, 0], dtype=jnp.int32)
+    xp, m = op.get_conn_padded(x)
+    np.testing.assert_array_equal(np.asarray(xp), np.asarray([[1, 0]], dtype=np.int32))
+    np.testing.assert_allclose(np.asarray(m), np.asarray([2.0], dtype=np.float32))

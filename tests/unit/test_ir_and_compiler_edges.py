@@ -29,7 +29,9 @@ from nkdsl.compiler.core.options import SymbolicCompilerOptions
 from nkdsl.compiler.core.pass_report import SymbolicPassReport
 from nkdsl.compiler.defaults import default_symbolic_artifact_store
 from nkdsl.compiler.defaults import default_symbolic_lowerer_registry
+from nkdsl.compiler.defaults import default_symbolic_operator_lowering_registry
 from nkdsl.compiler.defaults import default_symbolic_pass_pipeline
+from nkdsl.compiler.lowering.operator_registry import DEFAULT_SYMBOLIC_OPERATOR_LOWERING
 from nkdsl.compiler.passes.validation import SymbolicValidationPass
 from nkdsl.errors import SymbolicCompilerError
 from nkdsl.ir.program import SymbolicOperatorIR
@@ -331,9 +333,14 @@ def test_context_defaults_and_compiler_failure_paths():
     import nkdsl.compiler.defaults as defaults_mod
 
     defaults_mod._DEFAULT_STORE = None
+    defaults_mod._DEFAULT_OPERATOR_LOWERING_REGISTRY = None
     store_a = default_symbolic_artifact_store()
     store_b = default_symbolic_artifact_store()
     assert store_a is store_b
+    target_a = default_symbolic_operator_lowering_registry()
+    target_b = default_symbolic_operator_lowering_registry()
+    assert target_a is target_b
+    assert target_a.resolve().name == DEFAULT_SYMBOLIC_OPERATOR_LOWERING
     assert default_symbolic_pass_pipeline().pass_names() == (
         "symbolic_validation",
         "symbolic_normalization",

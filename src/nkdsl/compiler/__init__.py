@@ -46,7 +46,19 @@ from nkdsl.compiler.defaults import (
     default_symbolic_lowerer_registry,
 )
 from nkdsl.compiler.defaults import (
+    default_symbolic_operator_lowering_registry,
+)
+from nkdsl.compiler.defaults import (
     default_symbolic_pass_pipeline,
+)
+from nkdsl.compiler.lowering.operator_registry import (
+    DEFAULT_SYMBOLIC_OPERATOR_LOWERING,
+)
+from nkdsl.compiler.lowering.operator_registry import (
+    SymbolicOperatorLoweringRegistry,
+)
+from nkdsl.compiler.lowering.operator_registry import (
+    SymbolicOperatorLoweringTarget,
 )
 from nkdsl.errors import SymbolicCompilerError
 
@@ -64,7 +76,12 @@ __all__ = [
     # Default factories
     "default_symbolic_pass_pipeline",
     "default_symbolic_lowerer_registry",
+    "default_symbolic_operator_lowering_registry",
     "default_symbolic_artifact_store",
+    # Operator-lowering targets
+    "DEFAULT_SYMBOLIC_OPERATOR_LOWERING",
+    "SymbolicOperatorLoweringRegistry",
+    "SymbolicOperatorLoweringTarget",
     # Errors
     "SymbolicCompilerError",
 ]

@@ -17,12 +17,14 @@
 
 from .base import AbstractSymbolicOperator
 from .compiled import CompiledOperator
+from .compiled import create_compiled_operator
 from .operator import SymbolicOperator
 from .sum import SymbolicOperatorSum
 
 __all__ = [
     "AbstractSymbolicOperator",
     "CompiledOperator",
+    "create_compiled_operator",
     "SymbolicOperator",
     "SymbolicOperatorSum",
 ]

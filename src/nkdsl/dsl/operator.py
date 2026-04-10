@@ -127,7 +127,6 @@ from nkdsl.ir.term import SymbolicIRTerm
 from nkdsl.ir.update import UpdateProgram
 
 if TYPE_CHECKING:
-    from nkdsl import CompiledOperator
     from nkdsl import SymbolicOperator
 
 
@@ -855,12 +854,18 @@ class SymbolicDiscreteJaxOperator:
         )
         return op
 
-    def compile(self, *, backend: str = "jax", cache: bool = True) -> "CompiledOperator":
+    def compile(
+        self,
+        *,
+        backend: str = "jax",
+        operator_lowering: str = "netket_discrete_jax",
+        cache: bool = True,
+    ) -> Any:
         """
         Convenience shortcut: ``.build().compile(...)``.
 
         Returns:
-            Executable :class:`~nkdsl.core.compiled.CompiledOperator`.
+            Executable compiled operator instance.
         """
         debug_event(
             "compiling directly from dsl builder",
@@ -868,9 +873,14 @@ class SymbolicDiscreteJaxOperator:
             tag="DSL",
             operator_name=self._name,
             backend=backend,
+            operator_lowering=operator_lowering,
             cache=cache,
         )
-        return self.build().compile(backend=backend, cache=cache)
+        return self.build().compile(
+            backend=backend,
+            operator_lowering=operator_lowering,
+            cache=cache,
+        )
 
     def __repr__(self) -> str:
         n_sealed = len(self._completed_terms)

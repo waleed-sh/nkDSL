@@ -40,10 +40,11 @@ from nkdsl.compiler.core.signature import (
 from nkdsl.compiler.lowering.registry import (
     SymbolicLowererRegistry,
 )
+from nkdsl.compiler.lowering.operator_registry import (
+    SymbolicOperatorLoweringRegistry,
+)
 from nkdsl.debug import event as debug_event
 from nkdsl.errors import SymbolicCompilerError
-
-from netket.operator import DiscreteJaxOperator
 
 
 class SymbolicCompiler:
@@ -54,7 +55,7 @@ class SymbolicCompiler:
     :class:`~nkdsl.core.base.AbstractSymbolicOperator`),
     runs it through the registered pass pipeline, optionally resolves a cache
     hit, and, on a miss, invokes the appropriate lowerer to produce a
-    concrete :class:`~netket.operator.DiscreteJaxOperator`.
+    concrete executable operator instance.
 
     Typical usage::
 
@@ -69,9 +70,13 @@ class SymbolicCompiler:
             :func:`~nkdsl.compiler.defaults.default_symbolic_pass_pipeline`.
         lowerer_registry: Lowerer registry.  Defaults to
             :func:`~nkdsl.compiler.defaults.default_symbolic_lowerer_registry`.
+        operator_lowering_registry: Registry mapping operator-lowering names
+            to target classes and connection methods. Defaults to
+            :func:`~nkdsl.compiler.defaults.default_symbolic_operator_lowering_registry`.
         artifact_store: Artifact cache store.  Defaults to the module-level
             shared :func:`~nkdsl.compiler.defaults.default_symbolic_artifact_store`.
         options: Compiler options.  Defaults to :class:`SymbolicCompilerOptions` with all defaults.
+        operator_lowering: Convenience override for ``options.operator_lowering``.
     """
 
     def __init__(
@@ -79,12 +84,17 @@ class SymbolicCompiler:
         *,
         pipeline: SymbolicPassPipeline | None = None,
         lowerer_registry: SymbolicLowererRegistry | None = None,
+        operator_lowering_registry: SymbolicOperatorLoweringRegistry | None = None,
         artifact_store: AbstractSymbolicArtifactStore | None = None,
         options: SymbolicCompilerOptions | None = None,
         backend_preference: str | None = None,
         cache_enabled: bool | None = None,
+        operator_lowering: str | None = None,
     ) -> None:
         from nkdsl.compiler.cache.store import InMemorySymbolicArtifactStore
+        from nkdsl.compiler.defaults import (
+            default_symbolic_operator_lowering_registry,
+        )
         from nkdsl.compiler.defaults import (
             default_symbolic_lowerer_registry,
         )
@@ -93,11 +103,20 @@ class SymbolicCompiler:
         )
 
         self._pipeline = pipeline or default_symbolic_pass_pipeline()
-        self._registry = lowerer_registry or default_symbolic_lowerer_registry()
+        self._operator_lowering_registry = (
+            operator_lowering_registry or default_symbolic_operator_lowering_registry()
+        )
+        self._registry = lowerer_registry or default_symbolic_lowerer_registry(
+            operator_lowering_registry=self._operator_lowering_registry
+        )
         self._store = artifact_store or InMemorySymbolicArtifactStore()
 
         resolved_options = options or SymbolicCompilerOptions()
-        if backend_preference is not None or cache_enabled is not None:
+        if (
+            backend_preference is not None
+            or cache_enabled is not None
+            or operator_lowering is not None
+        ):
             resolved_options = SymbolicCompilerOptions(
                 backend_preference=(
                     backend_preference
@@ -110,6 +129,11 @@ class SymbolicCompiler:
                     cache_enabled if cache_enabled is not None else resolved_options.cache_enabled
                 ),
                 cache_namespace=resolved_options.cache_namespace,
+                operator_lowering=(
+                    operator_lowering
+                    if operator_lowering is not None
+                    else resolved_options.operator_lowering
+                ),
                 debug_flags=resolved_options.debug_flags,
             )
         self._options = resolved_options
@@ -154,6 +178,7 @@ class SymbolicCompiler:
             scope="compile",
             tag="COMPILER",
             backend_preference=effective_options.backend_preference,
+            operator_lowering=effective_options.operator_lowering,
             cache_enabled=effective_options.cache_enabled,
             strict_validation=effective_options.strict_validation,
         )
@@ -311,7 +336,7 @@ class SymbolicCompiler:
         *,
         options: SymbolicCompilerOptions | None = None,
         metadata: dict[str, Any] | None = None,
-    ) -> DiscreteJaxOperator:
+    ) -> Any:
         """
         Compiles a symbolic operator and returns the executable operator directly.
 
@@ -323,7 +348,7 @@ class SymbolicCompiler:
             metadata: Extra metadata for the context.
 
         Returns:
-            Executable :class:`~netket.operator.DiscreteJaxOperator`.
+            Executable compiled operator instance.
         """
         debug_event(
             "compile_operator wrapper invoked",
@@ -352,11 +377,17 @@ class SymbolicCompiler:
         """Returns registered lowerer names."""
         return self._registry.lowerer_names
 
+    @property
+    def operator_lowering_names(self) -> tuple[str, ...]:
+        """Returns registered operator-lowering target names."""
+        return self._operator_lowering_registry.target_names
+
     def __repr__(self) -> str:
         return (
             f"SymbolicCompiler("
             f"passes={self.pass_names!r}, "
             f"lowerers={self.lowerer_names!r}, "
+            f"operator_lowerings={self.operator_lowering_names!r}, "
             f"cache_size={self.cache_size})"
         )
 
@@ -369,7 +400,7 @@ def compile_symbolic_operator(
     *,
     options: SymbolicCompilerOptions | None = None,
     metadata: dict[str, Any] | None = None,
-) -> DiscreteJaxOperator:
+) -> Any:
     """
     Module-level convenience function for one-shot symbolic compilation.
 
@@ -382,7 +413,7 @@ def compile_symbolic_operator(
         metadata: Extra metadata for the context.
 
     Returns:
-        Executable :class:`~netket.operator.DiscreteJaxOperator`.
+        Executable compiled operator instance.
 
     Example::
 

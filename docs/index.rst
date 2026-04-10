@@ -18,8 +18,8 @@ The package is built around a simple four-step mental model:
 #. choose **how** to update the state
 #. choose the **matrix element** attached to each emitted branch
 
-That description is lowered into a static-shape JAX kernel that implements
-``get_conn_padded``.
+That description is lowered into a static-shape JAX connectivity kernel
+(default target: ``get_conn_padded``).
 
 .. toctree::
    :maxdepth: 2
@@ -47,3 +47,9 @@ That description is lowered into a static-shape JAX kernel that implements
    :caption: Reference
 
    api/index
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Project
+
+   changelog

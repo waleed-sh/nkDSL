@@ -18,6 +18,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import Any
 
+import jax.numpy as jnp
 import netket as nk
 import pytest
 
@@ -32,6 +33,12 @@ from nkdsl.compiler.core.pass_report import SymbolicPassReport
 from nkdsl.compiler.core.pipeline import SymbolicPassPipeline
 from nkdsl.compiler.core.signature import SymbolicCompilationSignature
 from nkdsl.compiler.lowering.base import AbstractSymbolicLowerer
+from nkdsl.compiler.lowering.operator_registry import (
+    DEFAULT_SYMBOLIC_OPERATOR_LOWERING,
+)
+from nkdsl.compiler.lowering.operator_registry import (
+    SymbolicOperatorLoweringRegistry,
+)
 from nkdsl.compiler.lowering.registry import SymbolicLowererRegistry
 from nkdsl.compiler.passes.base import AbstractSymbolicPass
 from nkdsl.errors import SymbolicCompilerError
@@ -66,10 +73,12 @@ def test_options_signature_and_validation():
         strict_validation=True,
         cache_enabled=True,
         cache_namespace="ns",
+        operator_lowering=DEFAULT_SYMBOLIC_OPERATOR_LOWERING,
         debug_flags={"dump_ir": True},
     )
     sig = opts.static_signature()
     assert ("backend_preference", "jax") in sig
+    assert ("operator_lowering", DEFAULT_SYMBOLIC_OPERATOR_LOWERING) in sig
     assert opts.debug_flag_map()["dump_ir"] is True
 
     with pytest.raises(ValueError, match="Unsupported backend_preference"):
@@ -77,6 +86,35 @@ def test_options_signature_and_validation():
 
     with pytest.raises(ValueError, match="non-empty string"):
         SymbolicCompilerOptions(cache_namespace="  ")
+
+    with pytest.raises(ValueError, match="non-empty string"):
+        SymbolicCompilerOptions(operator_lowering=" ")
+
+
+def test_operator_lowering_registry_register_replace_and_resolve():
+    registry = SymbolicOperatorLoweringRegistry()
+    registry.register(
+        name="alpha",
+        operator_type=dict,
+        connection_method="apply",
+        set_default=True,
+    )
+    assert registry.default_target == "alpha"
+    assert registry.resolve().name == "alpha"
+
+    with pytest.raises(ValueError, match="already registered"):
+        registry.register(name="alpha", operator_type=dict, connection_method="run")
+
+    registry.register(
+        name="alpha",
+        operator_type=list,
+        connection_method="append",
+        replace=True,
+    )
+    assert registry.resolve("alpha").operator_type is list
+
+    with pytest.raises(KeyError, match="Unknown lowering target"):
+        registry.resolve("missing")
 
 
 def test_signature_and_cache_key_are_deterministic():
@@ -246,3 +284,70 @@ def test_compiler_success_cache_and_errors():
 
     direct = compile_symbolic_operator(op)
     assert hasattr(direct, "get_conn_padded")
+
+
+class _ComputationalLikeOperator:
+    def __init__(self, hilbert):
+        self.hilbert = hilbert
+
+    def get_conn_padded(self, x):
+        return self._get_conn_padded(x)
+
+
+def test_compiler_uses_selected_operator_lowering_target():
+    op = _make_symbolic_operator("custom-lowering")
+
+    target_registry = SymbolicOperatorLoweringRegistry()
+    target_registry.register(
+        name=DEFAULT_SYMBOLIC_OPERATOR_LOWERING,
+        operator_type=nk.operator.DiscreteJaxOperator,
+        connection_method="get_conn_padded",
+        set_default=True,
+    )
+    target_registry.register(
+        name="computational_like",
+        operator_type=_ComputationalLikeOperator,
+        connection_method="_get_conn_padded",
+    )
+
+    compiler = SymbolicCompiler(
+        operator_lowering_registry=target_registry,
+        options=SymbolicCompilerOptions(
+            backend_preference="jax",
+            cache_enabled=False,
+            operator_lowering="computational_like",
+        ),
+    )
+    compiled = compiler.compile_operator(op)
+    assert isinstance(compiled, _ComputationalLikeOperator)
+    assert hasattr(compiled, "_get_conn_padded")
+
+    xp, mels = compiled.get_conn_padded(jnp.asarray([0, 1], dtype=jnp.int32))
+    assert xp.shape == (2, 2)
+    assert mels.shape == (2,)
+
+
+def test_dsl_builder_compile_forwards_operator_lowering_selection():
+    class _BuilderComputationalLikeOperator:
+        def __init__(self, hilbert):
+            self.hilbert = hilbert
+
+        def get_conn_padded(self, x):
+            return self._get_conn_padded(x)
+
+    target_registry = nkdsl.default_symbolic_operator_lowering_registry()
+    target_registry.register(
+        name="builder_computational_like",
+        operator_type=_BuilderComputationalLikeOperator,
+        connection_method="_get_conn_padded",
+        replace=True,
+    )
+
+    hi = nk.hilbert.Fock(n_max=2, N=1)
+    compiled = (
+        nkdsl.SymbolicDiscreteJaxOperator(hi, "builder-forward")
+        .for_each_site("i")
+        .emit(nkdsl.shift("i", +1), matrix_element=1.0)
+        .compile(cache=False, operator_lowering="builder_computational_like")
+    )
+    assert isinstance(compiled, _BuilderComputationalLikeOperator)

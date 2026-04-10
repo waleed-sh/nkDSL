@@ -17,8 +17,8 @@
 JAX backend symbolic operator lowerer.
 
 Converts a :class:`~nkdsl.ir.program.SymbolicOperatorIR`
-into a concrete :class:`~nkdsl.core.compiled.CompiledOperator`
-whose ``get_conn_padded`` kernel is built by interpreting the
+into a concrete compiled operator instance whose connectivity
+kernel is built by interpreting the
 :class:`~nkdsl.ir.expressions.AmplitudeExpr` /
 :class:`~nkdsl.ir.predicates.PredicateExpr` /
 :class:`~nkdsl.ir.update.UpdateProgram` expression trees
@@ -60,7 +60,11 @@ from nkdsl.compiler.lowering.base import (
     AbstractSymbolicLowerer,
 )
 from nkdsl.debug import event as debug_event
-from nkdsl.core.compiled import CompiledOperator
+from nkdsl.core.compiled import create_compiled_operator
+from nkdsl.compiler.lowering.operator_registry import (
+    SymbolicOperatorLoweringRegistry,
+    build_default_symbolic_operator_lowering_registry,
+)
 from nkdsl.ir.expressions import AmplitudeExpr
 from nkdsl.ir.predicates import PredicateExpr
 from nkdsl.ir.term import (
@@ -635,8 +639,11 @@ def _build_compiled_operator(
     output_dtype: Any,
     term_runners: list[Any],
     total_padded_size: int,
-) -> CompiledOperator:
-    """Composes term runners into a single ``CompiledOperator``."""
+    *,
+    operator_type: type[Any] | None = None,
+    connection_method: str = "get_conn_padded",
+) -> Any:
+    """Composes term runners into a single compiled operator instance."""
     _runners = tuple(term_runners)
     _padded = int(total_padded_size)
 
@@ -678,14 +685,17 @@ def _build_compiled_operator(
             m_2d.reshape(batch_shape + m_2d.shape[-1:]),
         )
 
-    return CompiledOperator(
-        hilbert,
-        name=operator_name,
-        fn=get_conn_padded_fn,
-        is_hermitian=is_hermitian,
-        dtype=output_dtype,
-        max_conn_size=total_padded_size,
-    )
+    kwargs: dict[str, Any] = {
+        "name": operator_name,
+        "fn": get_conn_padded_fn,
+        "is_hermitian": is_hermitian,
+        "dtype": output_dtype,
+        "max_conn_size": total_padded_size,
+        "connection_method": connection_method,
+    }
+    if operator_type is not None:
+        kwargs["operator_type"] = operator_type
+    return create_compiled_operator(hilbert, **kwargs)
 
 
 #
@@ -698,6 +708,15 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
 
     _LOWERER_NAME = "jax_symbolic_v1"
     _BACKEND = "jax"
+
+    def __init__(
+        self,
+        *,
+        operator_lowering_registry: SymbolicOperatorLoweringRegistry | None = None,
+    ) -> None:
+        if operator_lowering_registry is None:
+            operator_lowering_registry = build_default_symbolic_operator_lowering_registry()
+        self._operator_lowering_registry = operator_lowering_registry
 
     @property
     def name(self) -> str:
@@ -713,6 +732,9 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
 
     def lower(self, context: SymbolicCompilationContext) -> SymbolicCompiledArtifact:
         ir = context.ir
+        lowering_target = self._operator_lowering_registry.resolve(
+            context.options.operator_lowering
+        )
         debug_event(
             "starting jax lowering",
             scope="lowering",
@@ -720,6 +742,9 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
             operator_name=ir.operator_name,
             term_count=ir.term_count,
             dtype=ir.dtype_str,
+            operator_lowering=lowering_target.name,
+            target_operator_type=lowering_target.operator_type_qualname,
+            target_connection_method=lowering_target.connection_method,
         )
         try:
             output_dtype = np.dtype(ir.dtype_str)
@@ -802,6 +827,8 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
             output_dtype=output_dtype,
             term_runners=term_runners,
             total_padded_size=total_max_conn_size,
+            operator_type=lowering_target.operator_type,
+            connection_method=lowering_target.connection_method,
         )
 
         context.set_selected_lowerer(self._LOWERER_NAME)
@@ -812,6 +839,7 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
             operator_name=ir.operator_name,
             lowerer_name=self._LOWERER_NAME,
             total_padded_size=total_max_conn_size,
+            operator_lowering=lowering_target.name,
         )
 
         return SymbolicCompiledArtifact.create(
@@ -827,6 +855,9 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
                 "term_count": ir.term_count,
                 "total_padded_size": total_max_conn_size,
                 "is_hermitian": ir.is_hermitian,
+                "operator_lowering": lowering_target.name,
+                "target_operator_type": lowering_target.operator_type_qualname,
+                "target_connection_method": lowering_target.connection_method,
             },
         )
 

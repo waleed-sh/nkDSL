@@ -26,6 +26,10 @@ from nkdsl.compiler.core.pipeline import (
 from nkdsl.compiler.lowering.jax_lowerer import (
     JAXSymbolicLowerer,
 )
+from nkdsl.compiler.lowering.operator_registry import (
+    SymbolicOperatorLoweringRegistry,
+    build_default_symbolic_operator_lowering_registry,
+)
 from nkdsl.compiler.lowering.registry import (
     SymbolicLowererRegistry,
 )
@@ -44,6 +48,7 @@ from nkdsl.compiler.passes.validation import (
 
 # Module-level shared in-memory store (one per process)
 _DEFAULT_STORE: InMemorySymbolicArtifactStore | None = None
+_DEFAULT_OPERATOR_LOWERING_REGISTRY: SymbolicOperatorLoweringRegistry | None = None
 
 
 def default_symbolic_pass_pipeline() -> SymbolicPassPipeline:
@@ -77,19 +82,41 @@ def default_symbolic_pass_pipeline() -> SymbolicPassPipeline:
     )
 
 
-def default_symbolic_lowerer_registry() -> SymbolicLowererRegistry:
+def default_symbolic_lowerer_registry(
+    *,
+    operator_lowering_registry: SymbolicOperatorLoweringRegistry | None = None,
+) -> SymbolicLowererRegistry:
     """
     Builds the default symbolic lowerer registry.
 
     Currently registers only the JAX backend lowerer
     (:class:`~nkdsl.compiler.lowering.jax_lowerer.JAXSymbolicLowerer`).
+    The lowerer is configured with *operator_lowering_registry*.
 
     Returns:
         Configured :class:`~nkdsl.compiler.lowering.registry.SymbolicLowererRegistry`.
     """
+    resolved_targets = operator_lowering_registry or default_symbolic_operator_lowering_registry()
     registry = SymbolicLowererRegistry()
-    registry.register(JAXSymbolicLowerer())
+    registry.register(
+        JAXSymbolicLowerer(
+            operator_lowering_registry=resolved_targets,
+        )
+    )
     return registry
+
+
+def default_symbolic_operator_lowering_registry() -> SymbolicOperatorLoweringRegistry:
+    """
+    Returns the module-level shared operator-lowering target registry.
+
+    The default registry contains the NetKet discrete JAX target
+    (``"netket_discrete_jax"`` -> ``DiscreteJaxOperator.get_conn_padded``).
+    """
+    global _DEFAULT_OPERATOR_LOWERING_REGISTRY  # noqa: PLW0603
+    if _DEFAULT_OPERATOR_LOWERING_REGISTRY is None:
+        _DEFAULT_OPERATOR_LOWERING_REGISTRY = build_default_symbolic_operator_lowering_registry()
+    return _DEFAULT_OPERATOR_LOWERING_REGISTRY
 
 
 def default_symbolic_artifact_store() -> InMemorySymbolicArtifactStore:
@@ -112,5 +139,6 @@ def default_symbolic_artifact_store() -> InMemorySymbolicArtifactStore:
 __all__ = [
     "default_symbolic_pass_pipeline",
     "default_symbolic_lowerer_registry",
+    "default_symbolic_operator_lowering_registry",
     "default_symbolic_artifact_store",
 ]

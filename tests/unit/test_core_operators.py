@@ -24,6 +24,7 @@ from netket.operator._sum import SumOperator
 
 import nkdsl
 from nkdsl.core.compiled import CompiledOperator
+from nkdsl.core.compiled import create_compiled_operator
 from nkdsl.errors import SymbolicOperatorExecutionError
 
 pytestmark = pytest.mark.unit
@@ -157,6 +158,56 @@ def test_compiled_operator_properties_and_pytree_roundtrip():
     )
     assert isinstance(op + other, SumOperator)
     assert isinstance(op @ other, ProductOperator)
+
+
+def test_create_compiled_operator_validates_inputs_and_supports_custom_targets():
+    hi = nk.hilbert.Fock(n_max=2, N=2)
+
+    def fn(x):
+        return jnp.expand_dims(x, 0), jnp.ones((1,), dtype=jnp.float32)
+
+    with pytest.raises(ValueError, match="non-empty string"):
+        create_compiled_operator(
+            hi,
+            name="bad",
+            fn=fn,
+            is_hermitian=False,
+            dtype=np.float32,
+            max_conn_size=1,
+            connection_method=" ",
+        )
+
+    with pytest.raises(TypeError, match="operator_type must be a class"):
+        create_compiled_operator(
+            hi,
+            name="bad",
+            fn=fn,
+            is_hermitian=False,
+            dtype=np.float32,
+            max_conn_size=1,
+            operator_type="not-a-class",
+        )
+
+    class _ComputationalLikeOperator:
+        def __init__(self, hilbert):
+            self.hilbert = hilbert
+
+        def get_conn_padded(self, x):
+            return self._get_conn_padded(x)
+
+    op = create_compiled_operator(
+        hi,
+        name="custom",
+        fn=fn,
+        is_hermitian=False,
+        dtype=np.float32,
+        max_conn_size=1,
+        operator_type=_ComputationalLikeOperator,
+        connection_method="_get_conn_padded",
+    )
+    xp, mel = op.get_conn_padded(jnp.asarray([0, 1], dtype=jnp.int32))
+    np.testing.assert_array_equal(np.asarray(xp), np.asarray([[0, 1]], dtype=np.int32))
+    np.testing.assert_allclose(np.asarray(mel), np.asarray([1.0], dtype=np.float32))
 
 
 def test_complex_matrix_elements_auto_promote_dtype():

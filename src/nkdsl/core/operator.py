@@ -189,6 +189,7 @@ class SymbolicOperator(AbstractSymbolicOperator):
         self,
         *,
         backend: str = "jax",
+        operator_lowering: str = "netket_discrete_jax",
         cache: bool = True,
         compiler: Any = None,
     ) -> Any:  # -> CompiledOperator
@@ -196,6 +197,7 @@ class SymbolicOperator(AbstractSymbolicOperator):
 
         Args:
             backend: Backend target (currently only ``"jax"`` is supported).
+            operator_lowering: Registered operator-lowering target name.
             cache: Whether to cache the compiled artifact in the process-level store.
             compiler: Optional :class:`~nkdsl.compiler.SymbolicCompiler`
                 instance.  When ``None`` the module-level shared compiler is used.
@@ -213,6 +215,7 @@ class SymbolicOperator(AbstractSymbolicOperator):
         c = compiler or SymbolicCompiler(
             options=SymbolicCompilerOptions(
                 backend_preference=backend,
+                operator_lowering=operator_lowering,
                 cache_enabled=cache,
             )
         )
@@ -222,6 +225,7 @@ class SymbolicOperator(AbstractSymbolicOperator):
             tag="COMPILER",
             operator_name=self._name_val,
             backend=backend,
+            operator_lowering=operator_lowering,
             cache=cache,
         )
         return c.compile_operator(self)

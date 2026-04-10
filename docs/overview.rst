@@ -40,7 +40,8 @@ The source code mirrors that split closely.
 * predicates are stored as :class:`nkdsl.ir.predicates.PredicateExpr`.
 * rewrite programs are stored as :class:`nkdsl.ir.update.UpdateProgram`.
 * the compiler lowers the resulting :class:`nkdsl.ir.program.SymbolicOperatorIR`
-  into a concrete :class:`nkdsl.core.compiled.CompiledOperator`.
+  into a concrete executable operator target (default:
+  :class:`nkdsl.core.compiled.CompiledOperator`).
 
 What gets compiled
 ------------------

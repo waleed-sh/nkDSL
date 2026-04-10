@@ -69,16 +69,24 @@ from nkdsl.compiler import SymbolicCacheKey
 from nkdsl.compiler import SymbolicCompiledArtifact
 from nkdsl.compiler import SymbolicCompilationContext
 from nkdsl.compiler import (
+    DEFAULT_SYMBOLIC_OPERATOR_LOWERING,
+)
+from nkdsl.compiler import (
     SymbolicCompilationSignature,
 )
 from nkdsl.compiler import SymbolicCompiler
 from nkdsl.compiler import SymbolicCompilerOptions
+from nkdsl.compiler import SymbolicOperatorLoweringRegistry
+from nkdsl.compiler import SymbolicOperatorLoweringTarget
 from nkdsl.compiler import compile_symbolic_operator
 from nkdsl.compiler import (
     default_symbolic_artifact_store,
 )
 from nkdsl.compiler import (
     default_symbolic_lowerer_registry,
+)
+from nkdsl.compiler import (
+    default_symbolic_operator_lowering_registry,
 )
 from nkdsl.compiler import (
     default_symbolic_pass_pipeline,
@@ -147,7 +155,11 @@ __all__ = [
     "SymbolicCompilationSignature",
     "default_symbolic_pass_pipeline",
     "default_symbolic_lowerer_registry",
+    "default_symbolic_operator_lowering_registry",
     "default_symbolic_artifact_store",
+    "DEFAULT_SYMBOLIC_OPERATOR_LOWERING",
+    "SymbolicOperatorLoweringRegistry",
+    "SymbolicOperatorLoweringTarget",
     # IR
     "SymbolicOperatorIR",
     "SymbolicIRTerm",

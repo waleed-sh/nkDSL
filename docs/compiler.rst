@@ -1,6 +1,11 @@
 Compiler and execution
 ======================
 
+.. toctree::
+   :maxdepth: 1
+
+   compiler_operator_lowering_registry
+
 From DSL to executable operator
 -------------------------------
 
@@ -15,7 +20,8 @@ The default flow is:
 #. normalize and fingerprint the IR
 #. look up a cached compiled artifact
 #. on a cache miss, run analysis and fusion planning
-#. lower to a concrete JAX-backed :class:`nkdsl.core.compiled.CompiledOperator`
+#. lower to a concrete executable operator target (default:
+   :class:`nkdsl.core.compiled.CompiledOperator`)
 
 This structure is visible directly in the source tree under ``nkdsl.compiler``.
 
@@ -70,14 +76,15 @@ Convenience compilation from the builder or symbolic operator is also supported:
 Compiled operators
 ------------------
 
-The compiled object is a normal executable operator with a static
-``max_conn_size`` and a ``get_conn_padded`` method.
+Compiled objects are normal executable operators. The default target exposes
+``get_conn_padded`` and is represented by
+:class:`nkdsl.core.compiled.CompiledOperator`. Custom lowering targets can
+bind the generated kernel to a different method name (for example
+``_get_conn_padded``).
 
 .. code-block:: python
 
    xp, mels = compiled.get_conn_padded(x_batch)
-
-That object is represented by :class:`nkdsl.core.compiled.CompiledOperator`.
 
 How to read printed IR
 ----------------------

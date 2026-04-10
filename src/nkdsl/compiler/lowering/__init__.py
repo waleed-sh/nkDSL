@@ -24,9 +24,25 @@ from nkdsl.compiler.lowering.registry import (
 from nkdsl.compiler.lowering.jax_lowerer import (
     JAXSymbolicLowerer,
 )
+from nkdsl.compiler.lowering.operator_registry import (
+    DEFAULT_SYMBOLIC_OPERATOR_LOWERING,
+)
+from nkdsl.compiler.lowering.operator_registry import (
+    SymbolicOperatorLoweringRegistry,
+)
+from nkdsl.compiler.lowering.operator_registry import (
+    SymbolicOperatorLoweringTarget,
+)
+from nkdsl.compiler.lowering.operator_registry import (
+    build_default_symbolic_operator_lowering_registry,
+)
 
 __all__ = [
     "AbstractSymbolicLowerer",
     "SymbolicLowererRegistry",
     "JAXSymbolicLowerer",
+    "DEFAULT_SYMBOLIC_OPERATOR_LOWERING",
+    "SymbolicOperatorLoweringTarget",
+    "SymbolicOperatorLoweringRegistry",
+    "build_default_symbolic_operator_lowering_registry",
 ]

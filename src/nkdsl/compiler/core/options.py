@@ -23,6 +23,7 @@ from typing import Any
 
 _VALID_BACKENDS: frozenset[str] = frozenset({"jax", "auto"})
 _DEFAULT_CACHE_NAMESPACE: str = "nqx_symbolic_v1"
+_DEFAULT_OPERATOR_LOWERING: str = "netket_discrete_jax"
 
 
 @dataclasses.dataclass(frozen=True, repr=False)
@@ -37,6 +38,7 @@ class SymbolicCompilerOptions:
         strict_validation: Whether validation passes fail hard on errors.
         cache_enabled: Whether compiled artifacts are cached in-process.
         cache_namespace: Namespace string used in cache-key generation.
+        operator_lowering: Registry key selecting the compiled-operator target.
         debug_flags: Optional debug / instrumentation flags.
     """
 
@@ -45,6 +47,7 @@ class SymbolicCompilerOptions:
     strict_validation: bool = True
     cache_enabled: bool = True
     cache_namespace: str = _DEFAULT_CACHE_NAMESPACE
+    operator_lowering: str = _DEFAULT_OPERATOR_LOWERING
     debug_flags: tuple = dataclasses.field(default_factory=tuple)
 
     def __post_init__(self) -> None:
@@ -55,6 +58,8 @@ class SymbolicCompilerOptions:
             )
         if not self.cache_namespace.strip():
             raise ValueError("cache_namespace must be a non-empty string.")
+        if not self.operator_lowering.strip():
+            raise ValueError("operator_lowering must be a non-empty string.")
 
     @classmethod
     def from_mapping(
@@ -65,6 +70,7 @@ class SymbolicCompilerOptions:
         strict_validation: bool = True,
         cache_enabled: bool = True,
         cache_namespace: str = _DEFAULT_CACHE_NAMESPACE,
+        operator_lowering: str = _DEFAULT_OPERATOR_LOWERING,
         debug_flags: Mapping[str, Any] | None = None,
     ) -> "SymbolicCompilerOptions":
         """Builds options from user-friendly keyword arguments."""
@@ -79,6 +85,7 @@ class SymbolicCompilerOptions:
             strict_validation=bool(strict_validation),
             cache_enabled=bool(cache_enabled),
             cache_namespace=cache_namespace,
+            operator_lowering=operator_lowering,
             debug_flags=flags,
         )
 
@@ -94,6 +101,7 @@ class SymbolicCompilerOptions:
             ("strict_validation", int(self.strict_validation)),
             ("cache_enabled", int(self.cache_enabled)),
             ("cache_namespace", self.cache_namespace),
+            ("operator_lowering", self.operator_lowering),
             ("debug_flags", self.debug_flags),
         )
 
@@ -101,6 +109,7 @@ class SymbolicCompilerOptions:
         return (
             f"SymbolicCompilerOptions("
             f"backend_preference={self.backend_preference!r}, "
+            f"operator_lowering={self.operator_lowering!r}, "
             f"strict_validation={self.strict_validation}, "
             f"cache_enabled={self.cache_enabled})"
         )
