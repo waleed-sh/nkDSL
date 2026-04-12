@@ -55,6 +55,7 @@ from nkdsl.dsl import shift
 from nkdsl.dsl import shift_mod
 from nkdsl.dsl import site
 from nkdsl.dsl import emitted
+from nkdsl.dsl import global_index
 from nkdsl.dsl import swap
 from nkdsl.dsl import symbol
 from nkdsl.dsl import write
@@ -145,6 +146,7 @@ __all__ = [
     "site",
     "emitted",
     "symbol",
+    "global_index",
     "SiteSelector",
     "AbstractIteratorClause",
     "AbstractPredicateClause",

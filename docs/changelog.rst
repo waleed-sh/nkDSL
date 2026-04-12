@@ -27,6 +27,10 @@ New features
   together with registration APIs, so custom fluent iterator/predicate methods can
   be added without patching builder internals.
 
+* Added :func:`nkdsl.global_index` (and ``ExpressionContext.global_index``) as a
+  user-facing alias for static flat-index reads, so users no longer need to call
+  :class:`nkdsl.AmplitudeExpr` directly for this common pattern.
+
 Improvements
 ~~~~~~~~~~~~
 

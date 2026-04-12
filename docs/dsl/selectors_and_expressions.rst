@@ -53,7 +53,8 @@ Common helpers exposed through the IR and expression context include:
 * ``abs_``
 * ``pow``
 * ``wrap_mod``
-* ``static_index`` and ``static_emitted_index`` for flat-index access
+* ``global_index`` (alias of ``AmplitudeExpr.static_index``) for flat-index access
+* ``static_index`` and ``static_emitted_index`` remain available on ``AmplitudeExpr``
 
 ExpressionContext
 -----------------

@@ -33,8 +33,7 @@ def test_global_identity_diagonal_matrix_element():
         .globally()
         .emit(
             nkdsl.identity(),
-            matrix_element=nkdsl.AmplitudeExpr.static_index(0)
-            + nkdsl.AmplitudeExpr.static_index(1),
+            matrix_element=nkdsl.global_index(0) + nkdsl.global_index(1),
         )
         .build()
         .compile()

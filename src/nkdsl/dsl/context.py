@@ -21,6 +21,7 @@ from typing import Any
 
 from nkdsl.dsl.selectors import SiteSelector
 from nkdsl.dsl.selectors import emitted
+from nkdsl.dsl.selectors import global_index
 from nkdsl.dsl.selectors import site
 from nkdsl.dsl.selectors import symbol
 
@@ -74,6 +75,18 @@ class ExpressionContext:
     def emitted(self, label: str) -> SiteSelector:
         """Returns an emitted-state selector by label."""
         return emitted(label)
+
+    def global_index(self, flat_index: int) -> AmplitudeExpr:
+        """
+        Returns a static source-configuration read ``x[flat_index]``.
+
+        Args:
+            flat_index: Non-negative flat index into the source configuration ``x``.
+
+        Returns:
+            Static-index amplitude expression.
+        """
+        return global_index(flat_index)
 
     def all_of(self, *operands: Any) -> PredicateExpr:
         """Builds logical conjunction over provided predicate values."""

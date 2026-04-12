@@ -37,6 +37,7 @@ from .rewrite import write
 
 from .selectors import SiteSelector
 from .selectors import emitted
+from .selectors import global_index
 from .selectors import site
 from .selectors import symbol
 
@@ -62,5 +63,6 @@ __all__ = [
     "site",
     "emitted",
     "symbol",
+    "global_index",
     "SiteSelector",
 ]
