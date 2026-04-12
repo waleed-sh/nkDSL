@@ -37,7 +37,6 @@ import threading
 from dataclasses import dataclass
 from dataclasses import replace
 
-from datetime import datetime
 from textwrap import dedent
 
 from typing import Any
@@ -489,8 +488,9 @@ class ConfigManager:
         if cls._instance is None:
             with cls._class_lock:
                 if cls._instance is None:
-                    cls._instance = super().__new__(cls)
-                    cls._instance._initialized = False
+                    instance = super().__new__(cls)
+                    object.__setattr__(instance, "_initialized", False)
+                    cls._instance = instance
         return cls._instance
 
     def __init__(self) -> None:
@@ -564,7 +564,6 @@ class ConfigManager:
 
     def _register_statics(self) -> None:
         """Builds the read-only package-wide static variable dictionary."""
-        date_str = datetime.now().strftime("%Y%m%d")
         _s = {
             "Errors Directory": "https://nkdsl.readthedocs.io/en/latest/guides/errors.html",
             "Cache Directory": os.path.join(os.getcwd(), ".nkdsl_cache"),

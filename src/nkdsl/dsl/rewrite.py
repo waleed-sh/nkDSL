@@ -399,8 +399,8 @@ class Update:
             New ``Update`` wrapping the conditional.
         """
         pred_expr = coerce_predicate_expr(predicate)
-        then_ops = if_true._program.ops
-        else_ops = if_false._program.ops if if_false is not None else ()
+        then_ops = if_true.to_program().ops
+        else_ops = if_false.to_program().ops if if_false is not None else ()
         op = UpdateOp.from_mapping(
             kind="cond_branch",
             params={
@@ -422,7 +422,7 @@ class Update:
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Update):
             return NotImplemented
-        return self._program == other._program
+        return self._program == other.to_program()
 
     def __hash__(self) -> int:
         return hash(self._program)

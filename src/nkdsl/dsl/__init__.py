@@ -16,7 +16,14 @@
 """User-facing declarative symbolic operator DSL."""
 
 from .context import ExpressionContext
+from .clauses import register
+from .iterators import AbstractIteratorClause
+from .iterators import available_iterator_clause_names
+from .iterators import register_iterator_clause
 from .operator import SymbolicDiscreteJaxOperator
+from .predicates import AbstractPredicateClause
+from .predicates import available_predicate_clause_names
+from .predicates import register_predicate_clause
 
 from .rewrite import Update
 from .rewrite import affine
@@ -44,6 +51,13 @@ __all__ = [
     "shift_mod",
     "swap",
     "write",
+    "AbstractIteratorClause",
+    "AbstractPredicateClause",
+    "register",
+    "register_iterator_clause",
+    "register_predicate_clause",
+    "available_iterator_clause_names",
+    "available_predicate_clause_names",
     "ExpressionContext",
     "site",
     "emitted",

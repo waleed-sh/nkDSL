@@ -107,6 +107,14 @@ import numpy as np
 from netket.hilbert import DiscreteHilbert
 
 from nkdsl.debug import event as debug_event
+from nkdsl.dsl.iterators.dispatch import apply_iterator_clause
+from nkdsl.dsl.iterators.defaults import ensure_default_iterator_clause_registrations
+from nkdsl.dsl.iterators.registry import available_iterator_clause_names
+from nkdsl.dsl.iterators.registry import resolve_iterator_clause
+from nkdsl.dsl.predicates.dispatch import apply_predicate_clause
+from nkdsl.dsl.predicates.defaults import ensure_default_predicate_clause_registrations
+from nkdsl.dsl.predicates.registry import available_predicate_clause_names
+from nkdsl.dsl.predicates.registry import resolve_predicate_clause
 from nkdsl.dsl.rewrite import Update
 from nkdsl.dsl.rewrite import (
     _IDENTITY as _IDENTITY_UPDATE,
@@ -128,6 +136,9 @@ from nkdsl.ir.update import UpdateProgram
 
 if TYPE_CHECKING:
     from nkdsl import SymbolicOperator
+
+ensure_default_iterator_clause_registrations()
+ensure_default_predicate_clause_registrations()
 
 
 def _update_op_uses_shift_mod(op: Any) -> bool:
@@ -285,8 +296,57 @@ class _TermInProgress:
         self._name: "str | None" = None
         self._max_conn_size_hint: "int | None" = None
 
+    @property
+    def name(self) -> "str | None":
+        """Returns the optional user-assigned term name."""
+        return self._name
+
+    def set_name(self, name: str) -> None:
+        """
+        Sets the user-assigned term name.
+
+        Args:
+            name: Non-empty term name.
+        """
+        self._name = str(name)
+
+    @property
+    def max_conn_size_hint(self) -> "int | None":
+        """Returns the optional explicit max-connection-size hint."""
+        return self._max_conn_size_hint
+
+    def set_max_conn_size_hint(self, hint: int) -> None:
+        """
+        Sets an explicit max-connection-size hint.
+
+        Args:
+            hint: Positive max-connection-size bound.
+        """
+        self._max_conn_size_hint = int(hint)
+
+    @property
+    def predicate(self) -> PredicateExpr:
+        """Returns the current composed predicate expression."""
+        return self._predicate
+
+    @property
+    def predicate_op(self) -> str:
+        """Returns the top-level predicate operator name."""
+        return self._predicate.op
+
     def set_predicate(self, pred: Any) -> None:
+        """
+        Replaces the current term predicate.
+
+        Args:
+            pred: Predicate expression or coercible value.
+        """
         self._predicate = coerce_predicate_expr(pred)
+
+    @property
+    def emission_count(self) -> int:
+        """Returns the current emission count for this term."""
+        return len(self._emissions)
 
     def add_emission(self, update: Any, matrix_element: Any, tag: Any) -> None:
         prog = _coerce_update(update)
@@ -309,16 +369,16 @@ class _TermInProgress:
 
     def to_ir_term(self, auto_name: str) -> SymbolicIRTerm:
         if not self._emissions:
-            name = self._name if self._name is not None else auto_name
+            name = self.name if self.name is not None else auto_name
             raise ValueError(
                 f"Term {name!r} has no emissions. " "Call .emit(...) before .build() / .compile()."
             )
         emissions_tuple = tuple(self._emissions)
         first = emissions_tuple[0]
-        name = self._name if self._name is not None else auto_name
+        name = self.name if self.name is not None else auto_name
 
         # Auto-infer max_conn_size from iterator size x emission count when not user-set
-        max_conn_size_hint = self._max_conn_size_hint
+        max_conn_size_hint = self.max_conn_size_hint
         if max_conn_size_hint is None and isinstance(self._iterator, KBodyIteratorSpec):
             max_conn_size_hint = len(self._iterator.index_sets) * len(emissions_tuple)
 
@@ -396,6 +456,49 @@ class SymbolicDiscreteJaxOperator:
             hilbert_size=int(self._hilbert.size),
         )
 
+    @property
+    def hilbert(self) -> DiscreteHilbert:
+        """
+        Returns the Hilbert space associated with this builder.
+
+        Returns:
+            DiscreteHilbert: The builder Hilbert space.
+        """
+        return self._hilbert
+
+    def open_term(self, iterator: Any) -> "SymbolicDiscreteJaxOperator":
+        """
+        Opens a new in-progress term with the provided iterator.
+
+        Args:
+            iterator: Iterator descriptor for the new term.
+
+        Returns:
+            SymbolicDiscreteJaxOperator: This builder for fluent chaining.
+        """
+        return self._open_term(iterator)
+
+    def append_predicate(
+        self,
+        predicate: PredicateExpr,
+        *,
+        method_name: str = "where",
+    ) -> "SymbolicDiscreteJaxOperator":
+        """
+        Appends one predicate to the current term.
+
+        This is a public facade used by external predicate-clause modules to avoid
+        accessing private builder methods directly.
+
+        Args:
+            predicate: Predicate expression to append.
+            method_name: Name of the fluent method responsible for the append.
+
+        Returns:
+            SymbolicDiscreteJaxOperator: This builder for fluent chaining.
+        """
+        return self._append_predicate(predicate, method_name=method_name)
+
     #
     #
     #   Internal
@@ -454,7 +557,7 @@ class SymbolicDiscreteJaxOperator:
         Returns:
             This builder (for chaining).
         """
-        return self._open_term(KBodyIteratorSpec(labels=(), index_sets=((),)))
+        return apply_iterator_clause(self, "globally")
 
     def for_each_site(self, label: str = "i") -> "SymbolicDiscreteJaxOperator":
         """
@@ -470,13 +573,7 @@ class SymbolicDiscreteJaxOperator:
         Returns:
             This builder (for chaining).
         """
-        n = int(self._hilbert.size)
-        return self._open_term(
-            KBodyIteratorSpec(
-                labels=(str(label),),
-                index_sets=tuple((k,) for k in range(n)),
-            )
-        )
+        return apply_iterator_clause(self, "for_each_site", label)
 
     def for_each_pair(
         self,
@@ -497,11 +594,7 @@ class SymbolicDiscreteJaxOperator:
         Returns:
             This builder (for chaining).
         """
-        n = int(self._hilbert.size)
-        pairs = tuple((i, j) for i in range(n) for j in range(n))
-        return self._open_term(
-            KBodyIteratorSpec(labels=(str(label_a), str(label_b)), index_sets=pairs)
-        )
+        return apply_iterator_clause(self, "for_each_pair", label_a, label_b)
 
     def for_each_distinct_pair(
         self,
@@ -521,11 +614,7 @@ class SymbolicDiscreteJaxOperator:
         Returns:
             This builder (for chaining).
         """
-        n = int(self._hilbert.size)
-        pairs = tuple((i, j) for i in range(n) for j in range(n) if i != j)
-        return self._open_term(
-            KBodyIteratorSpec(labels=(str(label_a), str(label_b)), index_sets=pairs)
-        )
+        return apply_iterator_clause(self, "for_each_distinct_pair", label_a, label_b)
 
     def for_each_triplet(
         self,
@@ -547,8 +636,12 @@ class SymbolicDiscreteJaxOperator:
         Returns:
             This builder (for chaining).
         """
-        return self.for_each(
-            (str(label_a), str(label_b), str(label_c)),
+        return apply_iterator_clause(
+            self,
+            "for_each_triplet",
+            label_a,
+            label_b,
+            label_c,
             over=over,
         )
 
@@ -571,8 +664,13 @@ class SymbolicDiscreteJaxOperator:
         Returns:
             This builder (for chaining).
         """
-        return self.for_each(
-            (str(label_a), str(label_b), str(label_c), str(label_d)),
+        return apply_iterator_clause(
+            self,
+            "for_each_plaquette",
+            label_a,
+            label_b,
+            label_c,
+            label_d,
             over=over,
         )
 
@@ -611,18 +709,7 @@ class SymbolicDiscreteJaxOperator:
                 .build()
             )
         """
-        labels_t = tuple(str(l) for l in labels)
-        K = len(labels_t)
-        index_sets = tuple(tuple(int(idx) for idx in row) for row in over)
-        if not index_sets:
-            raise ValueError("for_each: over= must not be empty.")
-        for row in index_sets:
-            if len(row) != K:
-                raise ValueError(
-                    f"for_each: each tuple in over= must have length {K} "
-                    f"(one index per label); got length {len(row)}."
-                )
-        return self._open_term(KBodyIteratorSpec(labels=labels_t, index_sets=index_sets))
+        return apply_iterator_clause(self, "for_each", labels, over=over)
 
     #
     #
@@ -646,7 +733,7 @@ class SymbolicDiscreteJaxOperator:
         name = str(name).strip()
         if not name:
             raise ValueError("Term name must be a non-empty string.")
-        term._name = name
+        term.set_name(name)
         return self
 
     def max_conn_size(self, hint: int) -> "SymbolicDiscreteJaxOperator":
@@ -672,12 +759,34 @@ class SymbolicDiscreteJaxOperator:
         hint = int(hint)
         if hint <= 0:
             raise ValueError(f"max_conn_size hint must be a positive integer; got {hint!r}.")
-        term._max_conn_size_hint = hint
+        term.set_max_conn_size_hint(hint)
         return self
 
     def fanout(self, hint: int) -> "SymbolicDiscreteJaxOperator":
         """Backward-compatible alias for :meth:`max_conn_size`."""
         return self.max_conn_size(hint)
+
+    def _append_predicate(
+        self,
+        predicate: PredicateExpr,
+        *,
+        method_name: str = "where",
+    ) -> "SymbolicDiscreteJaxOperator":
+        """Composes one predicate into the current term with logical AND."""
+        term = self._require_open(method_name)
+        existing = term.predicate
+        if existing.op == "const" and bool(existing.args[0]):
+            term.set_predicate(predicate)
+        else:
+            term.set_predicate(PredicateExpr.and_(existing, predicate))
+        debug_event(
+            "updated term predicate",
+            scope="dsl",
+            tag="DSL",
+            predicate_op=term.predicate_op,
+            predicate_method=method_name,
+        )
+        return self
 
     #
     #
@@ -703,22 +812,7 @@ class SymbolicDiscreteJaxOperator:
         Returns:
             This builder (for chaining).
         """
-        term = self._require_open("where")
-        existing = term._predicate
-        new_pred = coerce_predicate_expr(predicate)
-        if existing.op == "const" and bool(existing.args[0]):
-            # Currently trivially true, replace
-            term.set_predicate(new_pred)
-        else:
-            # Compose with AND
-            term.set_predicate(PredicateExpr.and_(existing, new_pred))
-        debug_event(
-            "updated term predicate",
-            scope="dsl",
-            tag="DSL",
-            predicate_op=term._predicate.op,
-        )
-        return self
+        return apply_predicate_clause(self, "where", predicate)
 
     #
     #
@@ -772,7 +866,7 @@ class SymbolicDiscreteJaxOperator:
             "appended dsl emission",
             scope="dsl",
             tag="DSL",
-            emission_count=len(term._emissions),
+            emission_count=term.emission_count,
             used_deprecated_amplitude=amplitude is not None,
             branch_tag=tag,
         )
@@ -881,6 +975,46 @@ class SymbolicDiscreteJaxOperator:
             operator_lowering=operator_lowering,
             cache=cache,
         )
+
+    def __getattr__(self, name: str) -> Any:
+        """
+        Resolves dynamically-registered iterator/predicate clause methods.
+
+        This enables fluent user extensions such as ``builder.my_iterator(...)``
+        without adding concrete methods to this class.
+        """
+        iterator_clause = resolve_iterator_clause(name)
+        if iterator_clause is not None:
+
+            def _bound_iterator(*args: Any, **kwargs: Any) -> "SymbolicDiscreteJaxOperator":
+                return apply_iterator_clause(self, name, *args, **kwargs)
+
+            _bound_iterator.__name__ = name
+            _bound_iterator.__qualname__ = f"{type(self).__name__}.{name}"
+            _bound_iterator.__doc__ = iterator_clause.__doc__
+            return _bound_iterator
+
+        predicate_clause = resolve_predicate_clause(name)
+        if predicate_clause is not None:
+
+            def _bound_predicate(*args: Any, **kwargs: Any) -> "SymbolicDiscreteJaxOperator":
+                return apply_predicate_clause(self, name, *args, **kwargs)
+
+            _bound_predicate.__name__ = name
+            _bound_predicate.__qualname__ = f"{type(self).__name__}.{name}"
+            _bound_predicate.__doc__ = predicate_clause.__doc__
+            return _bound_predicate
+
+        raise AttributeError(f"{type(self).__name__!s} object has no attribute {name!r}")
+
+    def __dir__(self) -> list[str]:
+        """
+        Includes registered clause names in interactive completion output.
+        """
+        base = set(super().__dir__())
+        base.update(available_iterator_clause_names())
+        base.update(available_predicate_clause_names())
+        return sorted(base)
 
     def __repr__(self) -> str:
         n_sealed = len(self._completed_terms)

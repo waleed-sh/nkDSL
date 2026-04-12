@@ -40,6 +40,7 @@ import contextvars
 import dataclasses
 import datetime as _dt
 import functools
+import inspect
 import logging
 import os
 import platform
@@ -61,7 +62,6 @@ from typing import Any
 from typing import Callable
 from typing import Deque
 from typing import Dict
-from typing import Optional
 from typing import TypeVar
 from typing import Union
 
@@ -618,6 +618,11 @@ def dump_recent_events(*, n: int = 200, tag: str = "DUMP") -> None:
     _emit(logging.CRITICAL, "--- End recent events ---", tag=tag)
 
 
+def recent_event_count() -> int:
+    """Returns the number of buffered recent debug events."""
+    return len(_EVENT_BUFFER)
+
+
 def log_once(level: int, key: str, msg: str, *, tag: str | None = None) -> None:
     """Emits one log record per process for the given ``key``."""
     with _ONCE_KEYS_LOCK:
@@ -658,9 +663,14 @@ def event(
 
 
 def _find_external_caller() -> str:
+    frame = None
     try:
         this_file = __file__
-        frame = sys._getframe(2)
+        frame = inspect.currentframe()
+        if frame is not None:
+            frame = frame.f_back
+        if frame is not None:
+            frame = frame.f_back
         while frame:
             filename = frame.f_code.co_filename
             if filename != this_file and "functools" not in filename:
@@ -668,6 +678,9 @@ def _find_external_caller() -> str:
             frame = frame.f_back
     except Exception:
         pass
+    finally:
+        # Break reference cycles created by frame objects.
+        del frame
     return "unknown"
 
 
@@ -965,5 +978,6 @@ __all__ = [
     "event",
     "log_once",
     "dump_recent_events",
+    "recent_event_count",
     "tagged",
 ]
