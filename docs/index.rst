@@ -35,6 +35,12 @@ That description is lowered into a static-shape JAX connectivity kernel
 
    dsl/index
 
+.. toctree::
+   :maxdepth: 3
+   :caption: Guides
+
+   guides/index
+
 
 .. toctree::
    :maxdepth: 2

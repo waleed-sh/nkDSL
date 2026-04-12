@@ -22,6 +22,11 @@ New features
 * Added support for custom connection methods such as ``_get_conn_padded`` for
   computational-style operator subclasses.
 
+* Added a clause abstraction layer for DSL extensions:
+  :class:`nkdsl.AbstractIteratorClause` and :class:`nkdsl.AbstractPredicateClause`,
+  together with registration APIs, so custom fluent iterator/predicate methods can
+  be added without patching builder internals.
+
 Improvements
 ~~~~~~~~~~~~
 
@@ -51,3 +56,6 @@ Documentation
 
 * Added :doc:`compiler_operator_lowering_registry` with rationale, API surface,
   and usage examples.
+
+* Added a new :doc:`guides/index` section with detailed DSL extension guides,
+  including custom iterator and predicate clause examples.

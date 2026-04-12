@@ -14,6 +14,8 @@ The core pieces are:
   :func:`nkdsl.shift` or :func:`nkdsl.write`
 * emissions that attach a rewrite rule and matrix element to each active visit
 
+For custom fluent extensions, see :doc:`../guides/extending_dsl/index`.
+
 .. toctree::
    :maxdepth: 2
 
