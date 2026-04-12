@@ -46,23 +46,23 @@ def _dummy_context_with_ir(ir, hi):
 
 def test_shift_mod_spec_inference_and_errors():
     hi_ok = nk.hilbert.Fock(n_max=2, N=1)
-    state_min, mod_span = jl._infer_shift_mod_spec_from_hilbert(hi_ok)
+    state_min, mod_span = jl.infer_shift_mod_spec_from_hilbert(hi_ok)
     assert state_min == 0
     assert mod_span == 3
 
     with pytest.raises(ValueError, match="local_states"):
-        jl._infer_shift_mod_spec_from_hilbert(types.SimpleNamespace(local_states=None))
+        jl.infer_shift_mod_spec_from_hilbert(types.SimpleNamespace(local_states=None))
 
     with pytest.raises(ValueError, match="non-empty 1D"):
-        jl._infer_shift_mod_spec_from_hilbert(types.SimpleNamespace(local_states=np.zeros((2, 2))))
+        jl.infer_shift_mod_spec_from_hilbert(types.SimpleNamespace(local_states=np.zeros((2, 2))))
 
     with pytest.raises(ValueError, match="integer"):
-        jl._infer_shift_mod_spec_from_hilbert(
+        jl.infer_shift_mod_spec_from_hilbert(
             types.SimpleNamespace(local_states=np.asarray([0.0, 0.5, 1.0]))
         )
 
     with pytest.raises(ValueError, match="contiguous"):
-        jl._infer_shift_mod_spec_from_hilbert(
+        jl.infer_shift_mod_spec_from_hilbert(
             types.SimpleNamespace(local_states=np.asarray([0, 2, 3]))
         )
 
@@ -102,20 +102,20 @@ def test_eval_amplitude_and_predicate_all_main_paths():
             / 3
         )
     )
-    out = jl._eval_amplitude(expr, env, shift_mod_state_min=0, shift_mod_mod_span=3)
+    out = jl.eval_amplitude(expr, env, shift_mod_state_min=0, shift_mod_mod_span=3)
     assert np.isfinite(float(out))
 
     with pytest.raises(KeyError, match="not found"):
-        jl._eval_amplitude(nkdsl.AmplitudeExpr.symbol("missing"), env)
+        jl.eval_amplitude(nkdsl.AmplitudeExpr.symbol("missing"), env)
 
     with pytest.raises(KeyError, match=r"requires env\['__x__'\]"):
-        jl._eval_amplitude(nkdsl.AmplitudeExpr.static_index(0), {})
+        jl.eval_amplitude(nkdsl.AmplitudeExpr.static_index(0), {})
 
     with pytest.raises(KeyError, match=r"requires env\['__x_prime__'\]"):
-        jl._eval_amplitude(nkdsl.AmplitudeExpr.static_emitted_index(0), {})
+        jl.eval_amplitude(nkdsl.AmplitudeExpr.static_emitted_index(0), {})
 
     with pytest.raises(ValueError, match="requires a resolved shift_mod_spec"):
-        jl._eval_amplitude(nkdsl.AmplitudeExpr.wrap_mod(1), env)
+        jl.eval_amplitude(nkdsl.AmplitudeExpr.wrap_mod(1), env)
 
     pred = nkdsl.PredicateExpr.and_(
         nkdsl.PredicateExpr.or_(
@@ -129,8 +129,8 @@ def test_eval_amplitude_and_predicate_all_main_paths():
             nkdsl.PredicateExpr.ge(1, 1),
         ),
     )
-    assert bool(jl._eval_predicate(pred, env)) is True
-    assert bool(jl._eval_predicate(nkdsl.PredicateExpr.not_(False), env)) is True
+    assert bool(jl.eval_predicate(pred, env)) is True
+    assert bool(jl.eval_predicate(nkdsl.PredicateExpr.not_(False), env)) is True
 
 
 def test_apply_single_update_op_variants():
@@ -142,7 +142,7 @@ def test_apply_single_update_op_variants():
         "site:j:value": x[2],
     }
 
-    x1 = jl._apply_single_update_op(
+    x1 = jl.apply_single_update_op(
         UpdateOp.from_mapping(
             kind="write_site",
             params={"site": nkdsl.site("i").index, "value": nkdsl.AmplitudeExpr.constant(5)},
@@ -153,7 +153,7 @@ def test_apply_single_update_op_variants():
     )
     np.testing.assert_array_equal(np.asarray(x1), np.asarray([0, 5, 2]))
 
-    x2 = jl._apply_single_update_op(
+    x2 = jl.apply_single_update_op(
         UpdateOp.from_mapping(
             kind="shift_site",
             params={"site": nkdsl.site("i").index, "delta": nkdsl.AmplitudeExpr.constant(2)},
@@ -164,7 +164,7 @@ def test_apply_single_update_op_variants():
     )
     np.testing.assert_array_equal(np.asarray(x2), np.asarray([0, 3, 2]))
 
-    x3 = jl._apply_single_update_op(
+    x3 = jl.apply_single_update_op(
         UpdateOp.from_mapping(
             kind="shift_mod_site",
             params={"site": nkdsl.site("i").index, "delta": nkdsl.AmplitudeExpr.constant(3)},
@@ -178,7 +178,7 @@ def test_apply_single_update_op_variants():
     np.testing.assert_array_equal(np.asarray(x3), np.asarray([0, 1, 2]))
 
     with pytest.raises(ValueError, match="without a resolved shift_mod_spec"):
-        jl._apply_single_update_op(
+        jl.apply_single_update_op(
             UpdateOp.from_mapping(
                 kind="shift_mod_site",
                 params={"site": nkdsl.site("i").index, "delta": nkdsl.AmplitudeExpr.constant(1)},
@@ -188,7 +188,7 @@ def test_apply_single_update_op_variants():
             3,
         )
 
-    x4 = jl._apply_single_update_op(
+    x4 = jl.apply_single_update_op(
         UpdateOp.from_mapping(
             kind="swap_sites",
             params={"site_a": nkdsl.site("i").index, "site_b": nkdsl.site("j").index},
@@ -199,7 +199,7 @@ def test_apply_single_update_op_variants():
     )
     np.testing.assert_array_equal(np.asarray(x4), np.asarray([0, 2, 1]))
 
-    x5 = jl._apply_single_update_op(
+    x5 = jl.apply_single_update_op(
         UpdateOp.from_mapping(
             kind="affine_site",
             params={
@@ -214,7 +214,7 @@ def test_apply_single_update_op_variants():
     )
     np.testing.assert_array_equal(np.asarray(x5), np.asarray([0, 1, 2]))
 
-    x6 = jl._apply_single_update_op(
+    x6 = jl.apply_single_update_op(
         UpdateOp.from_mapping(
             kind="permute_sites",
             params={
@@ -231,7 +231,7 @@ def test_apply_single_update_op_variants():
     )
     np.testing.assert_array_equal(np.asarray(x6), np.asarray([1, 2, 0]))
 
-    x7 = jl._apply_single_update_op(
+    x7 = jl.apply_single_update_op(
         UpdateOp.from_mapping(
             kind="scatter",
             params={
@@ -272,7 +272,7 @@ def test_apply_single_update_op_variants():
             ),
         },
     )
-    x8 = jl._apply_single_update_op(cond, x, env, 3)
+    x8 = jl.apply_single_update_op(cond, x, env, 3)
     np.testing.assert_array_equal(np.asarray(x8), np.asarray([4, 1, 2]))
 
 
@@ -296,7 +296,7 @@ def test_apply_update_program_and_kbody_runner_shapes():
             ),
         ),
     )
-    runner_global = jl._make_kbody_runner(term_global, hi.size, np.float64)
+    runner_global = jl.make_kbody_runner(term_global, hi.size, np.float64)
     xp_g, m_g, v_g = runner_global(jnp.asarray([0, 1, 2], dtype=jnp.int32))
     assert xp_g.shape == (2, 3)
     assert m_g.shape == (2,)
@@ -309,7 +309,7 @@ def test_apply_update_program_and_kbody_runner_shapes():
         update_program=nkdsl.shift("i", +1).to_program(),
         amplitude=nkdsl.AmplitudeExpr.constant(1.0),
     )
-    runner_site = jl._make_kbody_runner(term_site, hi.size, np.float64)
+    runner_site = jl.make_kbody_runner(term_site, hi.size, np.float64)
     xp_s, m_s, v_s = runner_site(jnp.asarray([0, 1, 2], dtype=jnp.int32))
     assert xp_s.shape == (3, 3)
     assert m_s.shape == (3,)
@@ -317,7 +317,7 @@ def test_apply_update_program_and_kbody_runner_shapes():
 
     prog = nkdsl.shift("i", +1).invalidate().to_program()
     env = {"site:i:index": jnp.int32(0), "site:i:value": jnp.int32(0)}
-    x_prime, valid = jl._apply_update_program(jnp.asarray([0, 1], dtype=jnp.int32), prog, env, 2)
+    x_prime, valid = jl.apply_update_program(jnp.asarray([0, 1], dtype=jnp.int32), prog, env, 2)
     assert bool(valid) is False
     np.testing.assert_array_equal(np.asarray(x_prime), np.asarray([1, 1]))
 
@@ -328,7 +328,7 @@ def test_build_compiled_operator_padding_branches():
     def runner_short(x):
         return jnp.asarray([[x[0], x[1]]]), jnp.asarray([1.0]), jnp.asarray([True])
 
-    op = jl._build_compiled_operator(
+    op = jl.build_compiled_operator(
         hi,
         operator_name="pad",
         is_hermitian=True,
@@ -356,7 +356,7 @@ def test_build_compiled_operator_with_custom_connection_method():
     def runner_short(x):
         return jnp.asarray([[x[0], x[1]]]), jnp.asarray([2.0]), jnp.asarray([True])
 
-    op = jl._build_compiled_operator(
+    op = jl.build_compiled_operator(
         hi,
         operator_name="custom",
         is_hermitian=False,

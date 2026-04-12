@@ -15,7 +15,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
 from typing import Any
 
 import netket as nk
@@ -24,6 +23,7 @@ import pytest
 import nkdsl
 from nkdsl.compiler.compiler import SymbolicCompiler
 from nkdsl.compiler.compiler import compile_symbolic_operator
+from nkdsl.compiler.compiler import reset_default_symbolic_compiler
 from nkdsl.compiler.core.context import SymbolicCompilationContext
 from nkdsl.compiler.core.options import SymbolicCompilerOptions
 from nkdsl.compiler.core.pass_report import SymbolicPassReport
@@ -31,6 +31,7 @@ from nkdsl.compiler.defaults import default_symbolic_artifact_store
 from nkdsl.compiler.defaults import default_symbolic_lowerer_registry
 from nkdsl.compiler.defaults import default_symbolic_operator_lowering_registry
 from nkdsl.compiler.defaults import default_symbolic_pass_pipeline
+from nkdsl.compiler.defaults import reset_default_symbolic_singletons
 from nkdsl.compiler.lowering.operator_registry import DEFAULT_SYMBOLIC_OPERATOR_LOWERING
 from nkdsl.compiler.passes.validation import SymbolicValidationPass
 from nkdsl.errors import SymbolicCompilerError
@@ -330,10 +331,7 @@ def test_context_defaults_and_compiler_failure_paths():
     assert summary["pass_count"] == 1
 
     # Defaults wiring
-    import nkdsl.compiler.defaults as defaults_mod
-
-    defaults_mod._DEFAULT_STORE = None
-    defaults_mod._DEFAULT_OPERATOR_LOWERING_REGISTRY = None
+    reset_default_symbolic_singletons()
     store_a = default_symbolic_artifact_store()
     store_b = default_symbolic_artifact_store()
     assert store_a is store_b
@@ -415,9 +413,7 @@ def test_context_defaults_and_compiler_failure_paths():
     compiler.clear_cache()
     assert compiler.cache_size == 0
 
-    import nkdsl.compiler.compiler as compiler_mod
-
-    compiler_mod._DEFAULT_COMPILER = None
+    reset_default_symbolic_compiler()
     c1 = compile_symbolic_operator(op)
     c2 = compile_symbolic_operator(op)
     assert hasattr(c1, "get_conn_padded")

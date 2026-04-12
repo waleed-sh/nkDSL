@@ -106,7 +106,7 @@ def test_debug_settings_refresh_and_scope_filters():
 def test_debug_false_disables_all_debug_emission(tmp_path):
     import nkdsl.debug as nkdebug
 
-    before_len = len(nkdebug._EVENT_BUFFER)
+    before_len = nkdebug.recent_event_count()
 
     with nkdsl.cfg.patch(
         DEBUG=False,
@@ -127,5 +127,5 @@ def test_debug_false_disables_all_debug_emission(tmp_path):
             step="test",
         )
 
-    assert len(nkdebug._EVENT_BUFFER) == before_len
+    assert nkdebug.recent_event_count() == before_len
     assert not any(tmp_path.iterdir())
