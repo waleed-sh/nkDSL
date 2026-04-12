@@ -95,28 +95,28 @@ class _CompiledOperatorMixin:
 
     def __add__(self, other):
         if isinstance(other, AbstractOperator):
-            from netket.operator._sum import SumOperator
+            from netket.operator import SumOperator
 
             return SumOperator(self, other)
         return super().__add__(other)
 
     def __radd__(self, other):
         if isinstance(other, AbstractOperator):
-            from netket.operator._sum import SumOperator
+            from netket.operator import SumOperator
 
             return SumOperator(other, self)
         return super().__radd__(other)
 
     def __matmul__(self, other):
         if isinstance(other, AbstractOperator):
-            from netket.operator._prod import ProductOperator
+            from netket.operator import ProductOperator
 
             return ProductOperator(self, other)
         return super().__matmul__(other)
 
     def __rmatmul__(self, other):
         if isinstance(other, AbstractOperator):
-            from netket.operator._prod import ProductOperator
+            from netket.operator import ProductOperator
 
             return ProductOperator(other, self)
         return super().__rmatmul__(other)

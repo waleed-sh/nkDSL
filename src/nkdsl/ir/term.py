@@ -79,6 +79,18 @@ class KBodyIteratorSpec:
             return f"for {labels_str} in [{shown_str}, ... +{n - max_shown} more]"
         return f"for {labels_str} in [{shown_str}]"
 
+    def format_iterate_line(self, max_shown: int = 3) -> str:
+        """
+        Returns a compact readable description of the iteration domain.
+
+        Args:
+            max_shown: Maximum number of index rows to render explicitly.
+
+        Returns:
+            str: Human-readable iterator summary.
+        """
+        return self._format_iterate_line(max_shown=max_shown)
+
     def __repr__(self) -> str:
         return f"KBodyIteratorSpec(labels={self.labels!r}, " f"n_index_sets={len(self.index_sets)})"
 
@@ -236,7 +248,10 @@ class SymbolicIRTerm:
         it_kind = getattr(it, "kind", "unknown")
         n_iter = len(it.index_sets) if hasattr(it, "index_sets") else "?"
         max_conn = self.max_conn_size_hint if self.max_conn_size_hint is not None else "?"
-        iter_line = it._format_iterate_line() if hasattr(it, "_format_iterate_line") else repr(it)
+        if hasattr(it, "format_iterate_line"):
+            iter_line = it.format_iterate_line()
+        else:
+            iter_line = repr(it)
 
         inner = indent + "  "
         lines = [
@@ -253,6 +268,19 @@ class SymbolicIRTerm:
 
         lines.append(f"{indent}}}")
         return lines
+
+    def to_ir_lines(self, idx: "int | None" = None, indent: str = "") -> "list[str]":
+        """
+        Formats this term as indented IR lines for operator dumps.
+
+        Args:
+            idx: Optional term index to include in header formatting.
+            indent: Prefix indentation applied to all returned lines.
+
+        Returns:
+            list[str]: Rendered IR lines for this term.
+        """
+        return self._to_ir_lines(idx=idx, indent=indent)
 
     def __str__(self) -> str:
         return "\n".join(self._to_ir_lines(idx=None, indent=""))

@@ -73,11 +73,31 @@ class AbstractSymbolicOperator(DiscreteJaxOperator):
         return self._name_val
 
     @property
+    def name(self) -> str:
+        """
+        Returns user-facing operator name.
+
+        Returns:
+            str: Stable operator name.
+        """
+        return self._name_val
+
+    @property
     def dtype(self):
         """Returns matrix-element dtype."""
         import numpy as np
 
         return np.dtype(self._dtype_val)
+
+    @property
+    def dtype_str(self) -> str:
+        """
+        Returns matrix-element dtype as a normalized string.
+
+        Returns:
+            str: Dtype name string.
+        """
+        return self._dtype_val
 
     @property
     def is_hermitian(self) -> bool:
@@ -114,7 +134,7 @@ class AbstractSymbolicOperator(DiscreteJaxOperator):
 
     def __add__(self, other):
         if isinstance(other, AbstractOperator):
-            from netket.operator._sum import SumOperator
+            from netket.operator import SumOperator
 
             lhs = self.compile()
             rhs = other.compile() if isinstance(other, AbstractSymbolicOperator) else other
@@ -123,7 +143,7 @@ class AbstractSymbolicOperator(DiscreteJaxOperator):
 
     def __radd__(self, other):
         if isinstance(other, AbstractOperator):
-            from netket.operator._sum import SumOperator
+            from netket.operator import SumOperator
 
             lhs = other.compile() if isinstance(other, AbstractSymbolicOperator) else other
             rhs = self.compile()
@@ -132,7 +152,7 @@ class AbstractSymbolicOperator(DiscreteJaxOperator):
 
     def __matmul__(self, other):
         if isinstance(other, AbstractOperator):
-            from netket.operator._prod import ProductOperator
+            from netket.operator import ProductOperator
 
             lhs = self.compile()
             rhs = other.compile() if isinstance(other, AbstractSymbolicOperator) else other
@@ -141,7 +161,7 @@ class AbstractSymbolicOperator(DiscreteJaxOperator):
 
     def __rmatmul__(self, other):
         if isinstance(other, AbstractOperator):
-            from netket.operator._prod import ProductOperator
+            from netket.operator import ProductOperator
 
             lhs = other.compile() if isinstance(other, AbstractSymbolicOperator) else other
             rhs = self.compile()
@@ -155,6 +175,21 @@ class AbstractSymbolicOperator(DiscreteJaxOperator):
         Subclasses override this to perform the actual term-level amplitude scaling.
         """
         raise NotImplementedError(f"{type(self).__name__} does not implement _apply_scalar.")
+
+    def apply_scalar(self, scalar: "int | float | complex") -> "AbstractSymbolicOperator":
+        """
+        Returns a scaled copy of this operator.
+
+        This public facade allows external modules to trigger scaling without
+        relying on the protected :meth:`_apply_scalar` hook.
+
+        Args:
+            scalar: Real or complex scale factor.
+
+        Returns:
+            AbstractSymbolicOperator: Scaled operator.
+        """
+        return self._apply_scalar(scalar)
 
     def __mul__(self, scalar: Any) -> "AbstractSymbolicOperator":
         """

@@ -242,7 +242,7 @@ class SymbolicOperatorIR:
 
         for idx, term in enumerate(self.terms):
             lines.append("")
-            lines.extend(term._to_ir_lines(idx=idx, indent="  "))
+            lines.extend(term.to_ir_lines(idx=idx, indent="  "))
 
         lines.append("")
         lines.append("}")

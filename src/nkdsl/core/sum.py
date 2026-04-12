@@ -28,6 +28,49 @@ from nkdsl.core.base import AbstractSymbolicOperator
 from nkdsl.ir.program import SymbolicOperatorIR
 
 
+def _term_dtype_name(term: AbstractSymbolicOperator) -> str:
+    """
+    Resolves one term's dtype name using public APIs with compatibility fallback.
+
+    Args:
+        term: Symbolic operator term.
+
+    Returns:
+        str: Normalized dtype name for the term.
+
+    Raises:
+        AttributeError: If no dtype-like attribute is available.
+    """
+    if hasattr(term, "dtype_str"):
+        return np.dtype(term.dtype_str).name
+    if hasattr(term, "dtype"):
+        return np.dtype(term.dtype).name
+    legacy = getattr(term, "_dtype_val", None)
+    if legacy is not None:
+        return np.dtype(legacy).name
+    raise AttributeError(f"Cannot resolve dtype for term of type {type(term).__name__!r}.")
+
+
+def _term_display_name(term: AbstractSymbolicOperator) -> str:
+    """
+    Resolves one term's display name with compatibility fallback.
+
+    Args:
+        term: Symbolic operator term.
+
+    Returns:
+        str: Best-effort human-readable term name.
+    """
+    if hasattr(term, "name"):
+        return str(term.name)
+    if hasattr(term, "operator_name"):
+        return str(term.operator_name)
+    legacy = getattr(term, "_name_val", None)
+    if legacy is not None:
+        return str(legacy)
+    return type(term).__name__
+
+
 def _flatten_terms(
     terms: Sequence[AbstractSymbolicOperator],
 ) -> tuple[AbstractSymbolicOperator, ...]:
@@ -47,9 +90,9 @@ def _resolve_dtype(terms: Sequence[AbstractSymbolicOperator], explicit: str | No
         return np.dtype(explicit).name
     if not terms:
         return np.dtype("complex64").name
-    resolved = np.dtype(terms[0]._dtype_val)
+    resolved = np.dtype(_term_dtype_name(terms[0]))
     for term in terms[1:]:
-        resolved = np.result_type(resolved, np.dtype(term._dtype_val))
+        resolved = np.result_type(resolved, np.dtype(_term_dtype_name(term)))
     return np.dtype(resolved).name
 
 
@@ -91,7 +134,7 @@ class SymbolicOperatorSum(AbstractSymbolicOperator):
             if t.hilbert != hilbert:
                 raise ValueError(
                     f"All terms in SymbolicOperatorSum must share the same "
-                    f"Hilbert space. Term {t._name_val!r} has a different hilbert."
+                    f"Hilbert space. Term {_term_display_name(t)!r} has a different hilbert."
                 )
 
         resolved_name = str(name).strip() if name and str(name).strip() else "symbolic_sum"
@@ -137,13 +180,13 @@ class SymbolicOperatorSum(AbstractSymbolicOperator):
             _promote_dtype_for_scalar,
         )
 
-        new_terms = tuple(t._apply_scalar(scalar) for t in self._terms)
-        is_hermitian = self._is_hermitian_val and not isinstance(scalar, complex)
-        new_dtype = _promote_dtype_for_scalar(self._dtype_val, scalar)
+        new_terms = tuple(t.apply_scalar(scalar) for t in self._terms)
+        is_hermitian = self.is_hermitian and not isinstance(scalar, complex)
+        new_dtype = _promote_dtype_for_scalar(self.dtype_str, scalar)
         return SymbolicOperatorSum(
             self.hilbert,
             new_terms,
-            name=f"({_scalar_str(scalar)} * {self._name_val})",
+            name=f"({_scalar_str(scalar)} * {self.name})",
             dtype_str=new_dtype,
             is_hermitian=is_hermitian,
         )
@@ -171,14 +214,14 @@ class SymbolicOperatorSum(AbstractSymbolicOperator):
         combined_terms = tuple(term for child_ir in child_irs for term in child_ir.terms)
 
         fingerprints = tuple(ir.static_fingerprint() for ir in child_irs)
-        meta = dict(self._metadata_dict)
+        meta = dict(self.metadata)
         meta["child_ir_fingerprints"] = fingerprints
 
         return SymbolicOperatorIR.from_terms(
-            operator_name=self._name_val,
+            operator_name=self.name,
             hilbert_size=int(self.hilbert.size),
-            dtype_str=self._dtype_val,
-            is_hermitian=self._is_hermitian_val,
+            dtype_str=self.dtype_str,
+            is_hermitian=self.is_hermitian,
             terms=combined_terms,
             metadata=meta,
         )
@@ -202,10 +245,10 @@ class SymbolicOperatorSum(AbstractSymbolicOperator):
     def __repr__(self) -> str:
         return (
             f"SymbolicOperatorSum("
-            f"name={self._name_val!r}, "
+            f"name={self.name!r}, "
             f"term_count={len(self._terms)}, "
-            f"dtype={self._dtype_val!r}, "
-            f"is_hermitian={self._is_hermitian_val})"
+            f"dtype={self.dtype_str!r}, "
+            f"is_hermitian={self.is_hermitian})"
         )
 
 
