@@ -37,9 +37,10 @@ from .rewrite import write
 
 from .selectors import SiteSelector
 from .selectors import emitted
-from .selectors import global_index
 from .selectors import site
+from .selectors import source_index
 from .selectors import symbol
+from .selectors import target_index
 
 __all__ = [
     "SymbolicDiscreteJaxOperator",
@@ -63,6 +64,7 @@ __all__ = [
     "site",
     "emitted",
     "symbol",
-    "global_index",
+    "source_index",
+    "target_index",
     "SiteSelector",
 ]

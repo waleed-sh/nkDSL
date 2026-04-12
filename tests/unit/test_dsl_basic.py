@@ -33,7 +33,7 @@ def test_global_identity_diagonal_matrix_element():
         .globally()
         .emit(
             nkdsl.identity(),
-            matrix_element=nkdsl.global_index(0) + nkdsl.global_index(1),
+            matrix_element=nkdsl.source_index(0) + nkdsl.source_index(1),
         )
         .build()
         .compile()
@@ -44,6 +44,27 @@ def test_global_identity_diagonal_matrix_element():
 
     np.testing.assert_array_equal(np.asarray(xp), np.asarray([[1, 2]], dtype=np.int32))
     np.testing.assert_allclose(np.asarray(mels), np.asarray([3.0]))
+    assert op.max_conn_size == 1
+
+
+def test_global_target_index_reads_emitted_configuration():
+    hi = nk.hilbert.Fock(n_max=3, N=2)
+    op = (
+        nkdsl.SymbolicDiscreteJaxOperator(hi, "target-index")
+        .globally()
+        .emit(
+            nkdsl.write(0, 2),
+            matrix_element=nkdsl.target_index(0) + nkdsl.source_index(1),
+        )
+        .build()
+        .compile()
+    )
+
+    x = jnp.asarray([1, 3], dtype=jnp.int32)
+    xp, mels = op.get_conn_padded(x)
+
+    np.testing.assert_array_equal(np.asarray(xp), np.asarray([[2, 3]], dtype=np.int32))
+    np.testing.assert_allclose(np.asarray(mels), np.asarray([5.0]))
     assert op.max_conn_size == 1
 
 

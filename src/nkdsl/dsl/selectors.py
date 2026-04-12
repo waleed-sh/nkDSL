@@ -207,7 +207,7 @@ def symbol(name: str) -> AmplitudeExpr:
     return AmplitudeExpr.symbol(name)
 
 
-def global_index(flat_index: int) -> AmplitudeExpr:
+def source_index(flat_index: int) -> AmplitudeExpr:
     """
     Returns a static source-configuration read ``x[flat_index]``.
 
@@ -223,10 +223,27 @@ def global_index(flat_index: int) -> AmplitudeExpr:
     return AmplitudeExpr.static_index(flat_index)
 
 
+def target_index(flat_index: int) -> AmplitudeExpr:
+    """
+    Returns a static emitted/target-configuration read ``x'[flat_index]``.
+
+    This is a user-facing alias for
+    :meth:`nkdsl.ir.expressions.AmplitudeExpr.static_emitted_index`.
+
+    Args:
+        flat_index: Non-negative flat index into the emitted configuration ``x'``.
+
+    Returns:
+        Static-emitted-index amplitude expression.
+    """
+    return AmplitudeExpr.static_emitted_index(flat_index)
+
+
 __all__ = [
     "SiteSelector",
     "site",
     "emitted",
     "symbol",
-    "global_index",
+    "source_index",
+    "target_index",
 ]

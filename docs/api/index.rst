@@ -18,7 +18,8 @@ Top-level exports
    nkdsl.site
    nkdsl.emitted
    nkdsl.symbol
-   nkdsl.global_index
+   nkdsl.source_index
+   nkdsl.target_index
    nkdsl.shift
    nkdsl.shift_mod
    nkdsl.write

@@ -30,14 +30,19 @@ def test_expression_context_methods_cover_main_api_surface():
     s = ctx.symbol("theta")
     i = ctx.site("i")
     e = ctx.emitted("i")
-    g = ctx.global_index(3)
+    src = ctx.source_index(3)
+    tgt = ctx.target_index(4)
 
     assert str(c) == "2"
     assert str(s) == "%theta"
     assert i.label == "i"
     assert e.namespace == "emit"
-    assert str(g) == "x[3]"
-    assert str(nkdsl.global_index(1)) == "x[1]"
+    assert str(src) == "x[3]"
+    assert str(tgt) == "x'[4]"
+    assert str(nkdsl.source_index(1)) == "x[1]"
+    assert str(nkdsl.target_index(2)) == "x'[2]"
+    assert not hasattr(nkdsl, "global_index")
+    assert not hasattr(ctx, "global_index")
 
     expr = ctx.sqrt(ctx.abs_(ctx.pow(ctx.neg(i.value + 1), 2)))
     assert "sqrt(" in str(expr)
@@ -73,7 +78,10 @@ def test_expression_context_methods_cover_main_api_surface():
         ctx.sq_norm()
 
     with pytest.raises(ValueError, match="non-negative integer"):
-        ctx.global_index(-1)
+        ctx.source_index(-1)
+
+    with pytest.raises(ValueError, match="non-negative integer"):
+        ctx.target_index(-1)
 
 
 def test_site_selector_attr_and_comparisons():
