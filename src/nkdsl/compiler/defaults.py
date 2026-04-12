@@ -136,9 +136,23 @@ def default_symbolic_artifact_store() -> InMemorySymbolicArtifactStore:
     return _DEFAULT_STORE
 
 
+def reset_default_symbolic_singletons() -> None:
+    """
+    Resets module-level default singleton instances.
+
+    This helper primarily exists for tests that need deterministic singleton
+    lifecycle behavior across cases.
+    """
+    global _DEFAULT_STORE  # noqa: PLW0603
+    global _DEFAULT_OPERATOR_LOWERING_REGISTRY  # noqa: PLW0603
+    _DEFAULT_STORE = None
+    _DEFAULT_OPERATOR_LOWERING_REGISTRY = None
+
+
 __all__ = [
     "default_symbolic_pass_pipeline",
     "default_symbolic_lowerer_registry",
     "default_symbolic_operator_lowering_registry",
     "default_symbolic_artifact_store",
+    "reset_default_symbolic_singletons",
 ]

@@ -433,7 +433,19 @@ def compile_symbolic_operator(
     return _DEFAULT_COMPILER.compile_operator(operator, options=options, metadata=metadata)
 
 
+def reset_default_symbolic_compiler() -> None:
+    """
+    Resets the module-level shared compiler instance.
+
+    This helper primarily exists for tests that need deterministic singleton
+    lifecycle behavior across cases.
+    """
+    global _DEFAULT_COMPILER  # noqa: PLW0603
+    _DEFAULT_COMPILER = None
+
+
 __all__ = [
     "SymbolicCompiler",
     "compile_symbolic_operator",
+    "reset_default_symbolic_compiler",
 ]

@@ -45,6 +45,7 @@ output.
 from __future__ import annotations
 
 from typing import Any
+from typing import Callable
 
 import jax
 import jax.numpy as jnp
@@ -862,4 +863,202 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
         )
 
 
-__all__ = ["JAXSymbolicLowerer"]
+def infer_shift_mod_spec_from_hilbert(hilbert: Any) -> tuple[int, int]:
+    """
+    Infers wrapped shift/mod metadata from one Hilbert space.
+
+    Args:
+        hilbert: Hilbert object exposing ``local_states``.
+
+    Returns:
+        tuple[int, int]: ``(state_min, mod_span)`` for wrap-mod lowering.
+    """
+    return _infer_shift_mod_spec_from_hilbert(hilbert)
+
+
+def eval_amplitude(
+    expr: AmplitudeExpr,
+    env: dict[str, Any],
+    *,
+    shift_mod_state_min: int | None = None,
+    shift_mod_mod_span: int | None = None,
+) -> Any:
+    """
+    Evaluates one amplitude expression against an environment mapping.
+
+    Args:
+        expr: Symbolic amplitude expression.
+        env: Runtime evaluation environment.
+        shift_mod_state_min: Optional lower bound for wrap-mod remapping.
+        shift_mod_mod_span: Optional modulo span for wrap-mod remapping.
+
+    Returns:
+        Any: Evaluated scalar amplitude value.
+    """
+    return _eval_amplitude(
+        expr,
+        env,
+        shift_mod_state_min=shift_mod_state_min,
+        shift_mod_mod_span=shift_mod_mod_span,
+    )
+
+
+def eval_predicate(expr: PredicateExpr, env: dict[str, Any]) -> Any:
+    """
+    Evaluates one predicate expression against an environment mapping.
+
+    Args:
+        expr: Symbolic predicate expression.
+        env: Runtime evaluation environment.
+
+    Returns:
+        Any: Truthy predicate evaluation result.
+    """
+    return _eval_predicate(expr, env)
+
+
+def apply_single_update_op(
+    op: UpdateOp,
+    x: Any,
+    env: dict[str, Any],
+    hilbert_size: int,
+    *,
+    shift_mod_state_min: int | None = None,
+    shift_mod_mod_span: int | None = None,
+) -> Any:
+    """
+    Applies one update operation to a single configuration vector.
+
+    Args:
+        op: Update op to apply.
+        x: Input configuration vector.
+        env: Runtime environment map.
+        hilbert_size: Number of Hilbert sites.
+        shift_mod_state_min: Optional lower bound for wrap-mod remapping.
+        shift_mod_mod_span: Optional modulo span for wrap-mod remapping.
+
+    Returns:
+        Any: Updated configuration vector.
+    """
+    return _apply_single_update_op(
+        op,
+        x,
+        env,
+        hilbert_size,
+        shift_mod_state_min=shift_mod_state_min,
+        shift_mod_mod_span=shift_mod_mod_span,
+    )
+
+
+def apply_update_program(
+    x: Any,
+    program: UpdateProgram,
+    env: dict[str, Any],
+    hilbert_size: int,
+    *,
+    shift_mod_state_min: int | None = None,
+    shift_mod_mod_span: int | None = None,
+) -> tuple[Any, Any]:
+    """
+    Applies one update program to a single configuration vector.
+
+    Args:
+        x: Input configuration vector.
+        program: Update program to apply.
+        env: Runtime environment map.
+        hilbert_size: Number of Hilbert sites.
+        shift_mod_state_min: Optional lower bound for wrap-mod remapping.
+        shift_mod_mod_span: Optional modulo span for wrap-mod remapping.
+
+    Returns:
+        tuple[Any, Any]: ``(updated_configuration, is_valid)``.
+    """
+    return _apply_update_program(
+        x,
+        program,
+        env,
+        hilbert_size,
+        shift_mod_state_min=shift_mod_state_min,
+        shift_mod_mod_span=shift_mod_mod_span,
+    )
+
+
+def make_kbody_runner(
+    term: SymbolicIRTerm,
+    hilbert_size: int,
+    output_dtype: Any,
+    *,
+    shift_mod_state_min: int | None = None,
+    shift_mod_mod_span: int | None = None,
+) -> Callable[[Any], tuple[Any, Any, Any]]:
+    """
+    Builds one executable runner for a single K-body IR term.
+
+    Args:
+        term: Symbolic IR term descriptor.
+        hilbert_size: Number of Hilbert sites.
+        output_dtype: Matrix-element output dtype.
+        shift_mod_state_min: Optional lower bound for wrap-mod remapping.
+        shift_mod_mod_span: Optional modulo span for wrap-mod remapping.
+
+    Returns:
+        Callable[[Any], tuple[Any, Any, Any]]: Runtime term runner.
+    """
+    return _make_kbody_runner(
+        term,
+        hilbert_size,
+        output_dtype,
+        shift_mod_state_min=shift_mod_state_min,
+        shift_mod_mod_span=shift_mod_mod_span,
+    )
+
+
+def build_compiled_operator(
+    hilbert: Any,
+    *,
+    operator_name: str,
+    is_hermitian: bool,
+    output_dtype: Any,
+    term_runners: list[Callable[[Any], tuple[Any, Any, Any]]],
+    total_padded_size: int,
+    operator_type: type | None = None,
+    connection_method: str = "get_conn_padded",
+) -> Any:
+    """
+    Builds one compiled operator instance from prepared term runners.
+
+    Args:
+        hilbert: Hilbert space for the resulting compiled operator.
+        operator_name: Operator display name.
+        is_hermitian: Hermiticity declaration.
+        output_dtype: Matrix-element output dtype.
+        term_runners: Per-term execution callables.
+        total_padded_size: Output padding size for the connectivity kernel.
+        operator_type: Optional custom operator class target.
+        connection_method: Operator method name to attach connectivity callable to.
+
+    Returns:
+        Any: Compiled operator object exposing the requested connection method.
+    """
+    return _build_compiled_operator(
+        hilbert,
+        operator_name=operator_name,
+        is_hermitian=is_hermitian,
+        output_dtype=output_dtype,
+        term_runners=term_runners,
+        total_padded_size=total_padded_size,
+        operator_type=operator_type,
+        connection_method=connection_method,
+    )
+
+
+__all__ = [
+    "JAXSymbolicLowerer",
+    "infer_shift_mod_spec_from_hilbert",
+    "eval_amplitude",
+    "eval_predicate",
+    "apply_single_update_op",
+    "apply_update_program",
+    "make_kbody_runner",
+    "build_compiled_operator",
+]

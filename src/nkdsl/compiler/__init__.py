@@ -19,6 +19,9 @@ from nkdsl.compiler.compiler import SymbolicCompiler
 from nkdsl.compiler.compiler import (
     compile_symbolic_operator,
 )
+from nkdsl.compiler.compiler import (
+    reset_default_symbolic_compiler,
+)
 
 from nkdsl.compiler.core.options import (
     SymbolicCompilerOptions,
@@ -51,6 +54,9 @@ from nkdsl.compiler.defaults import (
 from nkdsl.compiler.defaults import (
     default_symbolic_pass_pipeline,
 )
+from nkdsl.compiler.defaults import (
+    reset_default_symbolic_singletons,
+)
 from nkdsl.compiler.lowering.operator_registry import (
     DEFAULT_SYMBOLIC_OPERATOR_LOWERING,
 )
@@ -66,6 +72,7 @@ __all__ = [
     # Primary API
     "SymbolicCompiler",
     "compile_symbolic_operator",
+    "reset_default_symbolic_compiler",
     # Options
     "SymbolicCompilerOptions",
     # Artifact and context
@@ -78,6 +85,7 @@ __all__ = [
     "default_symbolic_lowerer_registry",
     "default_symbolic_operator_lowering_registry",
     "default_symbolic_artifact_store",
+    "reset_default_symbolic_singletons",
     # Operator-lowering targets
     "DEFAULT_SYMBOLIC_OPERATOR_LOWERING",
     "SymbolicOperatorLoweringRegistry",
