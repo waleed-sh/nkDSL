@@ -4,7 +4,7 @@ Changelog
 This page follows a release-notes style inspired by JAX and PyTorch:
 one top-level section per release, with consistent change categories.
 
-Unreleased
+nkDSL v0.1.1a0
 -----------------------
 
 New features
