@@ -27,6 +27,7 @@ Minimum requirements:
 1. Subclass :class:`nkdsl.AbstractIteratorClause`.
 2. Implement ``build_iterator(self, hilbert, *args, **kwargs)``.
 3. Return a valid iterator specification:
+
    * either :class:`nkdsl.KBodyIteratorSpec`
    * or ``(labels, index_sets)`` where labels are strings and index sets are tuples of integer tuples.
 

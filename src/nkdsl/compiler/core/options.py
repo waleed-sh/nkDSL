@@ -39,6 +39,17 @@ class SymbolicCompilerOptions:
         cache_enabled: Whether compiled artifacts are cached in-process.
         cache_namespace: Namespace string used in cache-key generation.
         operator_lowering: Registry key selecting the compiled-operator target.
+        diagnostics_enabled: Whether DSL diagnostics pass is enabled.
+        diagnostics_min_severity: Minimum severity shown/enforced by diagnostics
+            (``"info"``, ``"warning"``, ``"error"``).
+        fail_on_warnings: Whether warnings should fail compilation.
+        max_diagnostics: Maximum number of diagnostics retained per compile.
+        lint_state_sample_size: Number of source states sampled by dynamic
+            connectivity diagnostics.
+        lint_branch_sample_cap: Maximum sampled branch evaluations for dynamic
+            connectivity diagnostics.
+        lint_max_exact_hilbert_states: Maximum Hilbert cardinality for exact
+            support-membership checks during diagnostics.
         debug_flags: Optional debug / instrumentation flags.
     """
 
@@ -48,6 +59,13 @@ class SymbolicCompilerOptions:
     cache_enabled: bool = True
     cache_namespace: str = _DEFAULT_CACHE_NAMESPACE
     operator_lowering: str = _DEFAULT_OPERATOR_LOWERING
+    diagnostics_enabled: bool = True
+    diagnostics_min_severity: str = "warning"
+    fail_on_warnings: bool = False
+    max_diagnostics: int = 200
+    lint_state_sample_size: int = 32
+    lint_branch_sample_cap: int = 4096
+    lint_max_exact_hilbert_states: int = 8192
     debug_flags: tuple = dataclasses.field(default_factory=tuple)
 
     def __post_init__(self) -> None:
@@ -60,6 +78,21 @@ class SymbolicCompilerOptions:
             raise ValueError("cache_namespace must be a non-empty string.")
         if not self.operator_lowering.strip():
             raise ValueError("operator_lowering must be a non-empty string.")
+        normalized_severity = str(self.diagnostics_min_severity).strip().lower()
+        if normalized_severity not in {"info", "warning", "error"}:
+            raise ValueError(
+                f"Unsupported diagnostics_min_severity: {self.diagnostics_min_severity!r}. "
+                "Allowed: ['error', 'info', 'warning']."
+            )
+        object.__setattr__(self, "diagnostics_min_severity", normalized_severity)
+        if int(self.max_diagnostics) <= 0:
+            raise ValueError("max_diagnostics must be a positive integer.")
+        if int(self.lint_state_sample_size) <= 0:
+            raise ValueError("lint_state_sample_size must be a positive integer.")
+        if int(self.lint_branch_sample_cap) <= 0:
+            raise ValueError("lint_branch_sample_cap must be a positive integer.")
+        if int(self.lint_max_exact_hilbert_states) <= 0:
+            raise ValueError("lint_max_exact_hilbert_states must be a positive integer.")
 
     @classmethod
     def from_mapping(
@@ -71,6 +104,13 @@ class SymbolicCompilerOptions:
         cache_enabled: bool = True,
         cache_namespace: str = _DEFAULT_CACHE_NAMESPACE,
         operator_lowering: str = _DEFAULT_OPERATOR_LOWERING,
+        diagnostics_enabled: bool = True,
+        diagnostics_min_severity: str = "warning",
+        fail_on_warnings: bool = False,
+        max_diagnostics: int = 200,
+        lint_state_sample_size: int = 32,
+        lint_branch_sample_cap: int = 4096,
+        lint_max_exact_hilbert_states: int = 8192,
         debug_flags: Mapping[str, Any] | None = None,
     ) -> "SymbolicCompilerOptions":
         """Builds options from user-friendly keyword arguments."""
@@ -86,6 +126,13 @@ class SymbolicCompilerOptions:
             cache_enabled=bool(cache_enabled),
             cache_namespace=cache_namespace,
             operator_lowering=operator_lowering,
+            diagnostics_enabled=bool(diagnostics_enabled),
+            diagnostics_min_severity=diagnostics_min_severity,
+            fail_on_warnings=bool(fail_on_warnings),
+            max_diagnostics=int(max_diagnostics),
+            lint_state_sample_size=int(lint_state_sample_size),
+            lint_branch_sample_cap=int(lint_branch_sample_cap),
+            lint_max_exact_hilbert_states=int(lint_max_exact_hilbert_states),
             debug_flags=flags,
         )
 
@@ -102,6 +149,13 @@ class SymbolicCompilerOptions:
             ("cache_enabled", int(self.cache_enabled)),
             ("cache_namespace", self.cache_namespace),
             ("operator_lowering", self.operator_lowering),
+            ("diagnostics_enabled", int(self.diagnostics_enabled)),
+            ("diagnostics_min_severity", self.diagnostics_min_severity),
+            ("fail_on_warnings", int(self.fail_on_warnings)),
+            ("max_diagnostics", int(self.max_diagnostics)),
+            ("lint_state_sample_size", int(self.lint_state_sample_size)),
+            ("lint_branch_sample_cap", int(self.lint_branch_sample_cap)),
+            ("lint_max_exact_hilbert_states", int(self.lint_max_exact_hilbert_states)),
             ("debug_flags", self.debug_flags),
         )
 
@@ -111,6 +165,7 @@ class SymbolicCompilerOptions:
             f"backend_preference={self.backend_preference!r}, "
             f"operator_lowering={self.operator_lowering!r}, "
             f"strict_validation={self.strict_validation}, "
+            f"diagnostics_enabled={self.diagnostics_enabled}, "
             f"cache_enabled={self.cache_enabled})"
         )
 
