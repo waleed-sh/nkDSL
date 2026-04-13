@@ -21,6 +21,7 @@ from nkdsl.compiler.diagnostics.models import count_diagnostics_by_severity
 from nkdsl.compiler.diagnostics.models import DSLDiagnostic
 
 LINTING_DOCS_INDEX_URL = "https://nkdsl.readthedocs.io/en/latest/dsl/linting/index.html"
+LINTING_DOCS_MESSAGES_URL = "https://nkdsl.readthedocs.io/en/latest/dsl/linting/messages.html"
 
 
 def linting_docs_url_for_code(code: str) -> str:
@@ -33,7 +34,7 @@ def linting_docs_url_for_code(code: str) -> str:
         Absolute documentation URL pointing to the code subsection.
     """
     normalized = str(code).strip().lower()
-    return f"{LINTING_DOCS_INDEX_URL}#lint-code-{normalized}"
+    return f"{LINTING_DOCS_MESSAGES_URL}#lint-code-{normalized}"
 
 
 def _format_example_preview(diagnostic: DSLDiagnostic) -> str | None:
@@ -114,7 +115,8 @@ def format_diagnostics_block(
             f"(errors={counts['error']}, warnings={counts['warning']}, info={counts['info']})"
         )
     ]
-    lines.append(f"Read more: {LINTING_DOCS_INDEX_URL}")
+    lines.append(f"Read more: {LINTING_DOCS_MESSAGES_URL}")
+    lines.append(f"Overview: {LINTING_DOCS_INDEX_URL}")
     lines.extend(format_diagnostic(diagnostic) for diagnostic in shown)
     if len(diagnostics) > len(shown):
         lines.append(f"... and {len(diagnostics) - len(shown)} more diagnostic(s).")
