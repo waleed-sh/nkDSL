@@ -8,7 +8,7 @@ The core pieces are:
 
 * :class:`nkdsl.SymbolicDiscreteJaxOperator` or the alias :class:`nkdsl.DOperator`
 * selectors such as :func:`nkdsl.site`, :func:`nkdsl.emitted`, and
-  :func:`nkdsl.symbol`
+  :func:`nkdsl.symbol` (including ``default/doc/dtype`` declarations)
 * predicates built with :class:`nkdsl.ir.PredicateExpr`
 * update programs built with :class:`nkdsl.Update` and helper functions such as
   :func:`nkdsl.shift` or :func:`nkdsl.write`

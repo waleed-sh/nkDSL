@@ -7,6 +7,7 @@
 [![PyPI](https://img.shields.io/pypi/v/nkDSL.svg)](https://pypi.org/project/nkDSL/)
 [![License](https://img.shields.io/github/license/waleed-sh/nkDSL.svg)](https://github.com/waleed-sh/nkDSL/blob/main/LICENSE)
 [![Documentation Status](https://readthedocs.org/projects/nkdsl/badge/?version=latest)](https://nkdsl.readthedocs.io/en/latest/?badge=latest)
+[![Coverage](https://img.shields.io/codecov/c/github/waleed-sh/nkDSL)](https://app.codecov.io/github/waleed-sh/nkDSL)
 
 </div>
 

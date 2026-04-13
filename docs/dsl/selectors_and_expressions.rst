@@ -14,7 +14,8 @@ Selectors are how you refer to site-local data symbolically.
    applied for the current branch
 
 ``symbol(name)``
-   creates a free named symbol that is not tied to an iterator label
+   creates a free named symbol that is not tied to an iterator label.
+   You can also declare ``default``, ``doc``, and ``dtype`` metadata.
 
 The selector object is :class:`nkdsl.dsl.selectors.SiteSelector`.
 
@@ -35,6 +36,44 @@ Example:
 
    amplitude = symbol("g") * site("i").value * emitted("j").value
    predicate = (site("i").index != site("j").index) & (site("i") > 0)
+
+Symbol declarations
+-------------------
+
+Free symbols can be declared with optional metadata:
+
+.. code-block:: python
+
+   from nkdsl import symbol
+
+   J = symbol(
+       "J",
+       default=1.0,
+       doc="Nearest-neighbor exchange coupling",
+       dtype="float32",
+   )
+
+   amplitude = J * site("i").value * emitted("j").value
+
+Declaration fields:
+
+``default``
+   fallback value used when no runtime binding for the symbol is provided
+
+``doc``
+   human-readable description for tooling/readability
+
+``dtype``
+   optional NumPy-compatible dtype declaration. If omitted and ``default`` is
+   provided, dtype is inferred from the default value.
+
+Practical behavior:
+
+* ``symbol("J")`` is unresolved and can trigger ``NKDSL-E001`` at compile time.
+* ``symbol("J", default=1.0)`` is considered resolved and does not trigger
+  unresolved-symbol linting.
+* if ``dtype`` is declared, runtime values are coerced to that dtype in the
+  lowered evaluator.
 
 Amplitude expressions
 ---------------------
@@ -67,6 +106,15 @@ For callback-based construction, ``nkDSL`` exposes
    def amplitude(ctx):
        i = ctx.site("i")
        return ctx.sqrt(i.value + 1)
+
+The context API mirrors symbol declarations:
+
+.. code-block:: python
+
+   def amplitude(ctx):
+       J = ctx.symbol("J", default=1.0, dtype="float32")
+       i = ctx.site("i")
+       return J * i.value
 
 This is mainly useful when a symbolic expression is easier to write as a small
 function than as one inline statement.

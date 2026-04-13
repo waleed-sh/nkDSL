@@ -30,6 +30,8 @@ NKDSL-E001: unresolved free symbols
 Meaning:
    The operator IR contains free symbolic names (for example ``symbol("J")``)
    that were not resolved before compilation.
+   Symbols declared with ``default=...`` are treated as resolved and do not
+   trigger this lint.
 
 Typical causes:
    A numeric value was intended but left symbolic, or a parameter-binding step
@@ -49,6 +51,8 @@ Example:
 How to resolve:
    Replace free symbols with concrete values before compile, or add an explicit
    parameter-binding layer in your workflow and ensure it runs before ``.compile()``.
+   For optional parameters, declare a fallback directly with
+   ``symbol("J", default=...)``.
 
 
 .. _lint-code-nkdsl-e002:

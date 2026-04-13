@@ -5,7 +5,7 @@ This page follows a release-notes style inspired by JAX and PyTorch:
 one top-level section per release, with consistent change categories.
 
 Unreleased
-----------
+------------
 
 New features
 ~~~~~~~~~~~~
@@ -13,6 +13,11 @@ New features
 * Added :class:`nkdsl.compiler.passes.diagnostics.SymbolicDiagnosticsPass`,
   a compiler-integrated DSL linting pass that reports symbol, index, and
   connectivity diagnostics during ``.compile()``.
+
+* Extended :func:`nkdsl.symbol` (and ``ExpressionContext.symbol``) with
+  first-class symbol declarations: ``default=...``, ``doc=...``, and
+  ``dtype=...``. Declared defaults are now used during compilation/evaluation
+  and are no longer reported as unresolved free symbols.
 
 Improvements
 ~~~~~~~~~~~~
@@ -37,7 +42,9 @@ Bug fixes
 Documentation
 ~~~~~~~~~~~~~
 
-* None.
+* Updated DSL docs for symbolic parameters, including examples for
+  ``symbol("J", default=..., doc=..., dtype=...)`` and guidance on how this
+  interacts with lint diagnostics for unresolved symbols.
 
 
 

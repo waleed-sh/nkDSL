@@ -150,8 +150,9 @@ The current selector helpers are:
 ``emitted(label)``
    select the same site position after the branch update has been applied
 
-``symbol(name)``
-   create a free symbolic parameter not bound to an iterator label
+``symbol(name, default=..., doc=..., dtype=...)``
+   create a free symbolic parameter not bound to an iterator label, optionally
+   with a fallback default value and dtype declaration
 
 On ``site(...)`` and ``emitted(...)``, the currently documented fields are:
 
@@ -180,6 +181,8 @@ Current amplitude-expression support includes:
 
 * numeric constants
 * free symbols via ``symbol(name)``
+* declared symbols with defaults and metadata via
+  ``symbol(name, default=..., doc=..., dtype=...)``
 * source-site selectors such as ``site("i").value``
 * emitted-state selectors such as ``emitted("i").value``
 * arithmetic: ``+``, ``-``, ``*``, ``/``, ``**``

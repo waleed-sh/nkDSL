@@ -99,6 +99,10 @@ Lint severities are intentionally policy-oriented:
 * ``info`` means non-blocking quality signal (readability, diagnostics coverage,
   or analysis completeness)
 
+For symbol diagnostics specifically, remember that only unresolved symbols
+trigger ``NKDSL-E001``. Symbols declared with ``default=...`` are considered
+resolved.
+
 You can enforce stricter behavior with ``diagnostics_min_severity`` and
 ``fail_on_warnings``.
 
