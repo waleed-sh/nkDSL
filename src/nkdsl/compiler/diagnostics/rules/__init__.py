@@ -11,3 +11,63 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+
+"""Rule registry for DSL diagnostics."""
+
+from __future__ import annotations
+
+from nkdsl.compiler.diagnostics.rules.base import AbstractDiagnosticRule
+from nkdsl.compiler.diagnostics.rules.base import DiagnosticRuleContext
+from nkdsl.compiler.diagnostics.rules.connectivity_rules import (
+    GeneratedConnectivityValidityRule,
+)
+from nkdsl.compiler.diagnostics.rules.structural_rules import (
+    ConstantFalsePredicateRule,
+)
+from nkdsl.compiler.diagnostics.rules.structural_rules import (
+    DuplicateEmissionRule,
+)
+from nkdsl.compiler.diagnostics.rules.structural_rules import (
+    MaxConnHintLowerBoundRule,
+)
+from nkdsl.compiler.diagnostics.rules.structural_rules import (
+    MissingBranchTagRule,
+)
+from nkdsl.compiler.diagnostics.rules.symbol_rules import (
+    StaticIndexBoundsRule,
+)
+from nkdsl.compiler.diagnostics.rules.symbol_rules import (
+    UnresolvedFreeSymbolsRule,
+)
+
+
+def default_diagnostic_rules() -> tuple[AbstractDiagnosticRule, ...]:
+    """Builds the default ordered DSL diagnostics rule set.
+
+    Returns:
+        Ordered tuple of diagnostics rule instances.
+    """
+    return (
+        UnresolvedFreeSymbolsRule(),
+        StaticIndexBoundsRule(),
+        ConstantFalsePredicateRule(),
+        DuplicateEmissionRule(),
+        MaxConnHintLowerBoundRule(),
+        MissingBranchTagRule(),
+        GeneratedConnectivityValidityRule(),
+    )
+
+
+__all__ = [
+    "AbstractDiagnosticRule",
+    "DiagnosticRuleContext",
+    "UnresolvedFreeSymbolsRule",
+    "StaticIndexBoundsRule",
+    "ConstantFalsePredicateRule",
+    "DuplicateEmissionRule",
+    "MaxConnHintLowerBoundRule",
+    "MissingBranchTagRule",
+    "GeneratedConnectivityValidityRule",
+    "default_diagnostic_rules",
+]
