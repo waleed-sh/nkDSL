@@ -20,6 +20,7 @@ from __future__ import annotations
 from nkdsl.debug import event as debug_event
 
 from .expressions import AmplitudeExpr
+from .expressions import parse_symbol_declaration_args
 from .predicates import PredicateExpr
 from .program import SymbolicOperatorIR
 from .term import SymbolicIRTerm
@@ -32,7 +33,8 @@ def _iter_amplitude_symbols(expr: AmplitudeExpr) -> list[str]:
 
     def visit(node: AmplitudeExpr) -> None:
         if node.op == "symbol":
-            symbols.append(str(node.args[0]))
+            name, _declaration = parse_symbol_declaration_args(node.args)
+            symbols.append(name)
             return
         for arg in node.args:
             if isinstance(arg, AmplitudeExpr):

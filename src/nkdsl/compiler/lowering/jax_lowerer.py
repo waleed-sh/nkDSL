@@ -67,6 +67,7 @@ from nkdsl.compiler.lowering.operator_registry import (
     build_default_symbolic_operator_lowering_registry,
 )
 from nkdsl.ir.expressions import AmplitudeExpr
+from nkdsl.ir.expressions import parse_symbol_declaration_args
 from nkdsl.ir.predicates import PredicateExpr
 from nkdsl.ir.term import (
     SymbolicIRTerm,
@@ -163,13 +164,17 @@ def _eval_amplitude(
         return jnp.array(expr.args[0])
 
     if op == "symbol":
-        name = expr.args[0]
-        if name not in env:
-            raise KeyError(
-                f"Symbol {name!r} not found in evaluation environment. "
-                f"Available: {sorted(env.keys())!r}."
-            )
-        return env[name]
+        name, declaration = parse_symbol_declaration_args(expr.args)
+        if name in env:
+            return env[name]
+        if "default" in declaration:
+            if "dtype" in declaration:
+                return jnp.asarray(declaration["default"], dtype=np.dtype(declaration["dtype"]))
+            return jnp.asarray(declaration["default"])
+        raise KeyError(
+            f"Symbol {name!r} not found in evaluation environment. "
+            f"Available: {sorted(env.keys())!r}."
+        )
 
     if op == "neg":
         return -_eval_amplitude(
