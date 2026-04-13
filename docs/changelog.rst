@@ -4,6 +4,43 @@ Changelog
 This page follows a release-notes style inspired by JAX and PyTorch:
 one top-level section per release, with consistent change categories.
 
+Unreleased
+----------
+
+New features
+~~~~~~~~~~~~
+
+* Added :class:`nkdsl.compiler.passes.diagnostics.SymbolicDiagnosticsPass`,
+  a compiler-integrated DSL linting pass that reports symbol, index, and
+  connectivity diagnostics during ``.compile()``.
+
+Improvements
+~~~~~~~~~~~~
+
+* None.
+
+Backwards incompatible changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* None.
+
+Deprecations
+~~~~~~~~~~~~
+
+* None.
+
+Bug fixes
+~~~~~~~~~
+
+* None.
+
+Documentation
+~~~~~~~~~~~~~
+
+* None.
+
+
+
 nkDSL v0.1.1a0
 -----------------------
 
