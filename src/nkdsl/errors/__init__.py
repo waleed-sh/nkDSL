@@ -18,6 +18,7 @@
 from nkdsl.errors.exceptions import NKDSLError
 from nkdsl.errors.exceptions import SymbolicCompilationError
 from nkdsl.errors.exceptions import SymbolicCompilerError
+from nkdsl.errors.exceptions import SymbolicDiagnosticsError
 from nkdsl.errors.exceptions import SymbolicError
 from nkdsl.errors.exceptions import SymbolicOperatorError
 from nkdsl.errors.exceptions import SymbolicOperatorExecutionError
@@ -29,4 +30,5 @@ __all__ = [
     "SymbolicOperatorExecutionError",
     "SymbolicCompilationError",
     "SymbolicCompilerError",
+    "SymbolicDiagnosticsError",
 ]

@@ -78,6 +78,21 @@ class SymbolicCompilerError(SymbolicCompilationError):
         )
 
 
+class SymbolicDiagnosticsError(SymbolicCompilationError):
+    """Raised when diagnostics are configured to fail the compilation flow."""
+
+    default_message = "Symbolic diagnostics reported blocking issues."
+
+    def __init__(self, message: str | None = None) -> None:
+        super().__init__(
+            message,
+            hint=(
+                "Address reported diagnostics or relax diagnostics strictness via "
+                "SymbolicCompilerOptions(diagnostics_min_severity=..., fail_on_warnings=...)."
+            ),
+        )
+
+
 __all__ = [
     "NKDSLError",
     "SymbolicError",
@@ -85,4 +100,5 @@ __all__ = [
     "SymbolicOperatorExecutionError",
     "SymbolicCompilationError",
     "SymbolicCompilerError",
+    "SymbolicDiagnosticsError",
 ]

@@ -21,6 +21,9 @@ from nkdsl.compiler.passes.base import (
 from nkdsl.compiler.passes.validation import (
     SymbolicValidationPass,
 )
+from nkdsl.compiler.passes.diagnostics import (
+    SymbolicDiagnosticsPass,
+)
 from nkdsl.compiler.passes.normalization import (
     SymbolicNormalizationPass,
 )
@@ -35,6 +38,7 @@ from nkdsl.compiler.passes.fusion import (
 __all__ = [
     "AbstractSymbolicPass",
     "SymbolicValidationPass",
+    "SymbolicDiagnosticsPass",
     "SymbolicNormalizationPass",
     "SymbolicMaxConnSizeAnalysisPass",
     "SymbolicFanoutAnalysisPass",

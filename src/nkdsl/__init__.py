@@ -123,6 +123,7 @@ from nkdsl.ir import coerce_predicate_expr
 from nkdsl.errors import NKDSLError
 from nkdsl.errors import SymbolicCompilationError
 from nkdsl.errors import SymbolicCompilerError
+from nkdsl.errors import SymbolicDiagnosticsError
 from nkdsl.errors import SymbolicError
 from nkdsl.errors import SymbolicOperatorError
 from nkdsl.errors import SymbolicOperatorExecutionError
@@ -196,6 +197,7 @@ __all__ = [
     "SymbolicOperatorExecutionError",
     "SymbolicCompilationError",
     "SymbolicCompilerError",
+    "SymbolicDiagnosticsError",
     # Configs
     "cfg",
 ]

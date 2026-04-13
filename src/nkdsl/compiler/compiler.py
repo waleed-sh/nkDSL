@@ -134,6 +134,13 @@ class SymbolicCompiler:
                     if operator_lowering is not None
                     else resolved_options.operator_lowering
                 ),
+                diagnostics_enabled=resolved_options.diagnostics_enabled,
+                diagnostics_min_severity=resolved_options.diagnostics_min_severity,
+                fail_on_warnings=resolved_options.fail_on_warnings,
+                max_diagnostics=resolved_options.max_diagnostics,
+                lint_state_sample_size=resolved_options.lint_state_sample_size,
+                lint_branch_sample_cap=resolved_options.lint_branch_sample_cap,
+                lint_max_exact_hilbert_states=resolved_options.lint_max_exact_hilbert_states,
                 debug_flags=resolved_options.debug_flags,
             )
         self._options = resolved_options

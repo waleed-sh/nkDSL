@@ -74,11 +74,19 @@ def test_options_signature_and_validation():
         cache_enabled=True,
         cache_namespace="ns",
         operator_lowering=DEFAULT_SYMBOLIC_OPERATOR_LOWERING,
+        diagnostics_enabled=True,
+        diagnostics_min_severity="warning",
+        fail_on_warnings=False,
+        max_diagnostics=25,
+        lint_state_sample_size=16,
+        lint_branch_sample_cap=128,
+        lint_max_exact_hilbert_states=1024,
         debug_flags={"dump_ir": True},
     )
     sig = opts.static_signature()
     assert ("backend_preference", "jax") in sig
     assert ("operator_lowering", DEFAULT_SYMBOLIC_OPERATOR_LOWERING) in sig
+    assert ("diagnostics_min_severity", "warning") in sig
     assert opts.debug_flag_map()["dump_ir"] is True
 
     with pytest.raises(ValueError, match="Unsupported backend_preference"):
@@ -89,6 +97,12 @@ def test_options_signature_and_validation():
 
     with pytest.raises(ValueError, match="non-empty string"):
         SymbolicCompilerOptions(operator_lowering=" ")
+
+    with pytest.raises(ValueError, match="Unsupported diagnostics_min_severity"):
+        SymbolicCompilerOptions(diagnostics_min_severity="verbose")
+
+    with pytest.raises(ValueError, match="positive integer"):
+        SymbolicCompilerOptions(max_diagnostics=0)
 
 
 def test_operator_lowering_registry_register_replace_and_resolve():

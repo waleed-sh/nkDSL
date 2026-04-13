@@ -341,6 +341,7 @@ def test_context_defaults_and_compiler_failure_paths():
     assert target_a.resolve().name == DEFAULT_SYMBOLIC_OPERATOR_LOWERING
     assert default_symbolic_pass_pipeline().pass_names() == (
         "symbolic_validation",
+        "symbolic_diagnostics",
         "symbolic_normalization",
         "symbolic_max_conn_size_analysis",
         "symbolic_fusion_planning",

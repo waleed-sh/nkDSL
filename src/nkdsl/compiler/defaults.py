@@ -45,6 +45,9 @@ from nkdsl.compiler.passes.normalization import (
 from nkdsl.compiler.passes.validation import (
     SymbolicValidationPass,
 )
+from nkdsl.compiler.passes.diagnostics import (
+    SymbolicDiagnosticsPass,
+)
 
 # Module-level shared in-memory store (one per process)
 _DEFAULT_STORE: InMemorySymbolicArtifactStore | None = None
@@ -58,7 +61,9 @@ def default_symbolic_pass_pipeline() -> SymbolicPassPipeline:
     **Pre-cache passes** (run on every :meth:`compile` call):
         1. :class:`~nkdsl.compiler.passes.validation.SymbolicValidationPass`
            - validates IR symbol scopes and update-op parameters.
-        2. :class:`~nkdsl.compiler.passes.normalization.SymbolicNormalizationPass`
+        2. :class:`~nkdsl.compiler.passes.diagnostics.SymbolicDiagnosticsPass`
+           - runs DSL lint rules and reports diagnostics.
+        3. :class:`~nkdsl.compiler.passes.normalization.SymbolicNormalizationPass`
            - computes the IR fingerprint and resolves the target backend.
 
     **Post-cache passes** (run only on cache misses):
@@ -73,6 +78,7 @@ def default_symbolic_pass_pipeline() -> SymbolicPassPipeline:
     return SymbolicPassPipeline(
         pre_cache_passes=[
             SymbolicValidationPass(),
+            SymbolicDiagnosticsPass(),
             SymbolicNormalizationPass(),
         ],
         post_cache_passes=[
