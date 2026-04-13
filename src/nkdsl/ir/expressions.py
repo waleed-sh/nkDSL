@@ -47,12 +47,87 @@ _AMPLITUDE_OPS: frozenset[str] = frozenset(
     }
 )
 
+_UNSET_SYMBOL_DEFAULT = object()
+_SYMBOL_DECLARATION_KEYS: frozenset[str] = frozenset({"default", "doc", "dtype"})
+
 
 def _freeze(v: Any) -> Any:
     """Recursively convert lists to tuples for hashability."""
     if isinstance(v, list):
         return tuple(_freeze(i) for i in v)
     return v
+
+
+def _normalize_symbol_name(name: str) -> str:
+    """Normalizes one symbol name and validates non-empty content."""
+    normalized = str(name).strip()
+    if not normalized:
+        raise ValueError("Amplitude symbols must be non-empty strings.")
+    return normalized
+
+
+def _normalize_symbol_dtype(dtype: str | None) -> str | None:
+    """Normalizes one optional symbol dtype declaration."""
+    if dtype is None:
+        return None
+    normalized = str(dtype).strip()
+    if not normalized:
+        raise ValueError("Symbol dtype must be a non-empty string when provided.")
+    try:
+        return np.dtype(normalized).name
+    except TypeError as exc:
+        raise ValueError(f"Unsupported symbol dtype declaration: {dtype!r}.") from exc
+
+
+def parse_symbol_declaration_args(args: tuple[Any, ...]) -> tuple[str, dict[str, Any]]:
+    """Parses a symbol-expression payload into name + declaration map.
+
+    Supported payload forms:
+      1. ``(name,)``
+      2. ``(name, declaration_tuple)``
+
+    ``declaration_tuple`` must be a stable tuple of ``(key, value)`` pairs.
+
+    Args:
+        args: ``AmplitudeExpr.args`` payload for a ``symbol`` node.
+
+    Returns:
+        Tuple ``(name, declaration_map)``.
+    """
+    if not args:
+        raise ValueError("Symbol expression payload must contain at least one argument.")
+
+    name = _normalize_symbol_name(str(args[0]))
+    if len(args) == 1:
+        return name, {}
+
+    if len(args) != 2:
+        raise ValueError(
+            "Symbol expression payload must have either one item (name) or two "
+            "items (name + declaration tuple)."
+        )
+
+    raw_declaration = args[1]
+    if not isinstance(raw_declaration, tuple):
+        raise TypeError("Symbol declaration payload must be a tuple of (key, value) pairs.")
+
+    declaration: dict[str, Any] = {}
+    for entry in raw_declaration:
+        if not isinstance(entry, tuple) or len(entry) != 2:
+            raise TypeError("Each symbol declaration entry must be a two-item tuple.")
+        key = str(entry[0]).strip()
+        if not key:
+            raise ValueError("Symbol declaration keys must be non-empty strings.")
+        if key not in _SYMBOL_DECLARATION_KEYS:
+            raise ValueError(
+                f"Unsupported symbol declaration key {key!r}. "
+                f"Allowed: {sorted(_SYMBOL_DECLARATION_KEYS)!r}."
+            )
+        if key in declaration:
+            raise ValueError(f"Duplicate symbol declaration key {key!r}.")
+        declaration[key] = entry[1]
+
+    return name, declaration
 
 
 @dataclasses.dataclass(frozen=True, repr=False)
@@ -85,12 +160,54 @@ class AmplitudeExpr:
         return cls(op="const", args=(_freeze(value),))
 
     @classmethod
-    def symbol(cls, name: str) -> "AmplitudeExpr":
-        """Builds a symbol-reference expression node."""
-        normalized = str(name).strip()
-        if not normalized:
-            raise ValueError("Amplitude symbols must be non-empty strings.")
-        return cls(op="symbol", args=(normalized,))
+    def symbol(
+        cls,
+        name: str,
+        *,
+        default: Any = _UNSET_SYMBOL_DEFAULT,
+        doc: str = "",
+        dtype: str | None = None,
+    ) -> "AmplitudeExpr":
+        """Builds a symbol-reference expression node.
+
+        Args:
+            name: Symbol name.
+            default: Optional default value used when the symbol is not supplied
+                in the runtime evaluation environment.
+            doc: Optional descriptive note for tooling and readability.
+            dtype: Optional declared dtype for this symbol. If omitted and
+                ``default`` is provided, dtype is inferred from ``default``.
+        """
+        normalized_name = _normalize_symbol_name(name)
+        normalized_dtype = _normalize_symbol_dtype(dtype)
+        declaration: list[tuple[str, Any]] = []
+
+        if default is not _UNSET_SYMBOL_DEFAULT:
+            default_value = _freeze(default)
+            inferred_dtype = np.asarray(default).dtype.name
+            if normalized_dtype is None:
+                normalized_dtype = inferred_dtype
+            elif not np.can_cast(
+                np.asarray(default).dtype,
+                np.dtype(normalized_dtype),
+                casting="safe",
+            ):
+                raise TypeError(
+                    f"Default value for symbol {normalized_name!r} has dtype {inferred_dtype!r}, "
+                    f"which cannot be safely cast to declared dtype {normalized_dtype!r}."
+                )
+            declaration.append(("default", default_value))
+
+        normalized_doc = str(doc).strip()
+        if normalized_doc:
+            declaration.append(("doc", normalized_doc))
+
+        if normalized_dtype is not None:
+            declaration.append(("dtype", normalized_dtype))
+
+        if declaration:
+            return cls(op="symbol", args=(normalized_name, tuple(declaration)))
+        return cls(op="symbol", args=(normalized_name,))
 
     @classmethod
     def neg(cls, operand: Any) -> "AmplitudeExpr":
@@ -266,7 +383,7 @@ def _render_amplitude(expr: "AmplitudeExpr") -> str:
         return repr(v)
 
     if op == "symbol":
-        name = str(args[0])
+        name, _declaration = parse_symbol_declaration_args(args)
         parts = name.split(":")
         if len(parts) == 3:
             ns, label, field = parts
@@ -331,10 +448,10 @@ def _render_amplitude(expr: "AmplitudeExpr") -> str:
 def _collect_free_symbols(expr: "AmplitudeExpr", result: "set[str]") -> None:
     """Recursively collects free (non-iterator-bound) symbol names from an AmplitudeExpr."""
     if expr.op == "symbol":
-        name = str(expr.args[0])
+        name, declaration = parse_symbol_declaration_args(expr.args)
         parts = name.split(":")
         # Bound symbols follow "namespace:label:field" — site:i:value, emit:i:index, etc.
-        if not (len(parts) == 3 and parts[0] in ("site", "emit")):
+        if not (len(parts) == 3 and parts[0] in ("site", "emit")) and "default" not in declaration:
             result.add(name)
         return
     for arg in expr.args:
@@ -380,4 +497,5 @@ __all__ = [
     "coerce_amplitude_expr",
     "_collect_free_symbols",
     "_render_amplitude",
+    "parse_symbol_declaration_args",
 ]
