@@ -34,6 +34,8 @@ from nkdsl.ir.expressions import (
 from nkdsl.ir.predicates import PredicateExpr
 from nkdsl.ir.predicates import coerce_predicate_expr
 
+_UNSET_SYMBOL_DEFAULT = object()
+
 
 class ExpressionContext:
     """
@@ -53,9 +55,25 @@ class ExpressionContext:
         """Returns a constant amplitude expression."""
         return AmplitudeExpr.constant(value)
 
-    def symbol(self, name: str) -> AmplitudeExpr:
-        """Returns a free symbolic amplitude expression."""
-        return symbol(name)
+    def symbol(
+        self,
+        name: str,
+        *,
+        default: Any = _UNSET_SYMBOL_DEFAULT,
+        doc: str = "",
+        dtype: str | None = None,
+    ) -> AmplitudeExpr:
+        """Returns a free symbolic amplitude expression.
+
+        Args:
+            name: Symbol name.
+            default: Optional default value.
+            doc: Optional symbol documentation string.
+            dtype: Optional symbol dtype declaration.
+        """
+        if default is not _UNSET_SYMBOL_DEFAULT:
+            return symbol(name, default=default, doc=doc, dtype=dtype)
+        return symbol(name, doc=doc, dtype=dtype)
 
     def sqrt(self, operand: Any) -> AmplitudeExpr:
         """Returns a square-root amplitude expression."""

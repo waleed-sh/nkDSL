@@ -27,6 +27,8 @@ from typing import Any
 
 from nkdsl.ir.expressions import AmplitudeExpr
 
+_UNSET_SYMBOL_DEFAULT = object()
+
 
 def _site_symbol(label: str, field: str, namespace: str = "site") -> AmplitudeExpr:
     """Returns a symbolic AmplitudeExpr for one site field."""
@@ -191,20 +193,33 @@ def emitted(label: str) -> SiteSelector:
     return SiteSelector(label, namespace="emit")
 
 
-def symbol(name: str) -> AmplitudeExpr:
+def symbol(
+    name: str,
+    *,
+    default: Any = _UNSET_SYMBOL_DEFAULT,
+    doc: str = "",
+    dtype: str | None = None,
+) -> AmplitudeExpr:
     """
     Returns a free symbolic amplitude expression by name.
 
-    Free symbols are not bound to any site iterator, they are resolved at
-    operator-evaluation time from external parameter dictionaries.
+    Free symbols are not bound to any site iterator. They can optionally
+    declare a default value and documentation. When a default is provided,
+    compiled operators can evaluate without external symbol bindings.
 
     Args:
         name: Symbol name.
+        default: Optional default value.
+        doc: Optional symbol documentation string.
+        dtype: Optional symbol dtype. If not provided and ``default`` is
+            supplied, dtype is inferred from ``default``.
 
     Returns:
         Symbolic amplitude expression.
     """
-    return AmplitudeExpr.symbol(name)
+    if default is not _UNSET_SYMBOL_DEFAULT:
+        return AmplitudeExpr.symbol(name, default=default, doc=doc, dtype=dtype)
+    return AmplitudeExpr.symbol(name, doc=doc, dtype=dtype)
 
 
 def source_index(flat_index: int) -> AmplitudeExpr:
