@@ -198,7 +198,7 @@ def symbol(
     *,
     default: Any = _UNSET_SYMBOL_DEFAULT,
     doc: str = "",
-    dtype: str | None = None,
+    dtype: Any | None = None,
 ) -> AmplitudeExpr:
     """
     Returns a free symbolic amplitude expression by name.
@@ -211,8 +211,8 @@ def symbol(
         name: Symbol name.
         default: Optional default value.
         doc: Optional symbol documentation string.
-        dtype: Optional symbol dtype. If not provided and ``default`` is
-            supplied, dtype is inferred from ``default``.
+        dtype: Optional NumPy-compatible dtype declaration. If not provided and
+            ``default`` is supplied, dtype is inferred from ``default``.
 
     Returns:
         Symbolic amplitude expression.

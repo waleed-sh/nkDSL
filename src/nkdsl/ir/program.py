@@ -195,8 +195,8 @@ class SymbolicOperatorIR:
         Returns the union of free symbol names across all terms.
 
         Free symbols are named parameters (e.g. ``symbol("kappa")``) that are
-        not bound by any iterator label and must be resolved externally at
-        evaluation time.
+        not bound by any iterator label and still unresolved. Symbols declared
+        with ``default=...`` are treated as resolved and are not included.
         """
         result: set = set()
         for term in self.terms:

@@ -166,6 +166,8 @@ def _eval_amplitude(
     if op == "symbol":
         name, declaration = parse_symbol_declaration_args(expr.args)
         if name in env:
+            if "dtype" in declaration:
+                return jnp.asarray(env[name], dtype=np.dtype(declaration["dtype"]))
             return env[name]
         if "default" in declaration:
             if "dtype" in declaration:

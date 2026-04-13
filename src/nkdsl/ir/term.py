@@ -228,7 +228,8 @@ class SymbolicIRTerm:
         Returns the set of free (non-iterator-bound) symbol names in this term.
 
         Free symbols are those not bound by any site/emit iterator label, i.e. named
-        parameters such as ``symbol("kappa")`` that must be resolved externally.
+        parameters such as ``symbol("kappa")`` that remain unresolved. Symbols
+        declared with ``default=...`` are considered resolved and are omitted.
         """
         from .expressions import _collect_free_symbols
         from .predicates import _collect_free_symbols_pred

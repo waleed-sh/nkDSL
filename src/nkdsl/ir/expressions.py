@@ -66,15 +66,19 @@ def _normalize_symbol_name(name: str) -> str:
     return normalized
 
 
-def _normalize_symbol_dtype(dtype: str | None) -> str | None:
-    """Normalizes one optional symbol dtype declaration."""
+def _normalize_symbol_dtype(dtype: Any | None) -> str | None:
+    """Normalizes one optional symbol dtype declaration.
+
+    Args:
+        dtype: Optional NumPy-compatible dtype specifier.
+
+    Returns:
+        Canonical dtype name, or ``None`` when no dtype is declared.
+    """
     if dtype is None:
         return None
-    normalized = str(dtype).strip()
-    if not normalized:
-        raise ValueError("Symbol dtype must be a non-empty string when provided.")
     try:
-        return np.dtype(normalized).name
+        return np.dtype(dtype).name
     except TypeError as exc:
         raise ValueError(f"Unsupported symbol dtype declaration: {dtype!r}.") from exc
 
@@ -125,7 +129,16 @@ def parse_symbol_declaration_args(args: tuple[Any, ...]) -> tuple[str, dict[str,
             )
         if key in declaration:
             raise ValueError(f"Duplicate symbol declaration key {key!r}.")
-        declaration[key] = entry[1]
+        value = entry[1]
+        if key == "doc":
+            value = str(value).strip()
+            if not value:
+                continue
+        elif key == "dtype":
+            value = _normalize_symbol_dtype(value)
+            if value is None:
+                continue
+        declaration[key] = value
 
     return name, declaration
 
@@ -166,7 +179,7 @@ class AmplitudeExpr:
         *,
         default: Any = _UNSET_SYMBOL_DEFAULT,
         doc: str = "",
-        dtype: str | None = None,
+        dtype: Any | None = None,
     ) -> "AmplitudeExpr":
         """Builds a symbol-reference expression node.
 
@@ -177,6 +190,10 @@ class AmplitudeExpr:
             doc: Optional descriptive note for tooling and readability.
             dtype: Optional declared dtype for this symbol. If omitted and
                 ``default`` is provided, dtype is inferred from ``default``.
+
+        Raises:
+            TypeError: If a provided ``default`` cannot be converted to the
+                declared ``dtype``.
         """
         normalized_name = _normalize_symbol_name(name)
         normalized_dtype = _normalize_symbol_dtype(dtype)
@@ -187,15 +204,14 @@ class AmplitudeExpr:
             inferred_dtype = np.asarray(default).dtype.name
             if normalized_dtype is None:
                 normalized_dtype = inferred_dtype
-            elif not np.can_cast(
-                np.asarray(default).dtype,
-                np.dtype(normalized_dtype),
-                casting="safe",
-            ):
-                raise TypeError(
-                    f"Default value for symbol {normalized_name!r} has dtype {inferred_dtype!r}, "
-                    f"which cannot be safely cast to declared dtype {normalized_dtype!r}."
-                )
+            else:
+                try:
+                    np.asarray(default, dtype=np.dtype(normalized_dtype))
+                except (TypeError, ValueError) as exc:
+                    raise TypeError(
+                        f"Default value for symbol {normalized_name!r} cannot be converted "
+                        f"to declared dtype {normalized_dtype!r}."
+                    ) from exc
             declaration.append(("default", default_value))
 
         normalized_doc = str(doc).strip()

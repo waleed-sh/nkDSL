@@ -61,7 +61,7 @@ class ExpressionContext:
         *,
         default: Any = _UNSET_SYMBOL_DEFAULT,
         doc: str = "",
-        dtype: str | None = None,
+        dtype: Any | None = None,
     ) -> AmplitudeExpr:
         """Returns a free symbolic amplitude expression.
 
@@ -69,7 +69,7 @@ class ExpressionContext:
             name: Symbol name.
             default: Optional default value.
             doc: Optional symbol documentation string.
-            dtype: Optional symbol dtype declaration.
+            dtype: Optional NumPy-compatible symbol dtype declaration.
         """
         if default is not _UNSET_SYMBOL_DEFAULT:
             return symbol(name, default=default, doc=doc, dtype=dtype)

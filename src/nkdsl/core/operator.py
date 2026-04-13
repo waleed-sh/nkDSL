@@ -130,8 +130,9 @@ class SymbolicOperator(AbstractSymbolicOperator):
         """
         Returns the set of free (non-iterator-bound) symbol names across all terms.
 
-        Free symbols are named parameters such as ``symbol("kappa")`` that must
-        be resolved externally before or during compilation.
+        Free symbols are unresolved named parameters such as ``symbol("kappa")``.
+        Symbols declared with ``default=...`` are considered resolved and are not
+        included in this set.
         """
         result: set = set()
         for t in self._ir_terms:
