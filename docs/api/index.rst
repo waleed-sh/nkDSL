@@ -75,10 +75,22 @@ Modules
    nkdsl.compiler.core.pipeline
    nkdsl.compiler.core.pass_report
    nkdsl.compiler.core.signature
+   nkdsl.compiler.diagnostics
+   nkdsl.compiler.diagnostics.collector
+   nkdsl.compiler.diagnostics.formatting
+   nkdsl.compiler.diagnostics.models
+   nkdsl.compiler.diagnostics.state_sampling
+   nkdsl.compiler.diagnostics.traversals
+   nkdsl.compiler.diagnostics.rules
+   nkdsl.compiler.diagnostics.rules.base
+   nkdsl.compiler.diagnostics.rules.connectivity_rules
+   nkdsl.compiler.diagnostics.rules.structural_rules
+   nkdsl.compiler.diagnostics.rules.symbol_rules
    nkdsl.compiler.lowering.base
    nkdsl.compiler.lowering.registry
    nkdsl.compiler.lowering.jax_lowerer
    nkdsl.compiler.passes.base
+   nkdsl.compiler.passes.diagnostics
    nkdsl.compiler.passes.validation
    nkdsl.compiler.passes.normalization
    nkdsl.compiler.passes.analysis

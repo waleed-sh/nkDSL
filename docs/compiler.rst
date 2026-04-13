@@ -17,6 +17,7 @@ The default flow is:
 
 #. build symbolic terms into :class:`nkdsl.ir.program.SymbolicOperatorIR`
 #. validate symbol scope and update-program consistency
+#. run DSL linting diagnostics (symbol/index/connectivity quality checks)
 #. normalize and fingerprint the IR
 #. look up a cached compiled artifact
 #. on a cache miss, run analysis and fusion planning
@@ -29,13 +30,14 @@ Default passes
 --------------
 
 The default pipeline created by
-:func:`nkdsl.compiler.defaults.default_symbolic_pass_pipeline` contains four
+:func:`nkdsl.compiler.defaults.default_symbolic_pass_pipeline` contains five
 passes.
 
 Pre-cache passes
 ~~~~~~~~~~~~~~~~
 
 * :class:`nkdsl.compiler.passes.validation.SymbolicValidationPass`
+* :class:`nkdsl.compiler.passes.diagnostics.SymbolicDiagnosticsPass`
 * :class:`nkdsl.compiler.passes.normalization.SymbolicNormalizationPass`
 
 Post-cache passes
@@ -43,6 +45,22 @@ Post-cache passes
 
 * :class:`nkdsl.compiler.passes.analysis.SymbolicMaxConnSizeAnalysisPass`
 * :class:`nkdsl.compiler.passes.fusion.SymbolicFusionPass`
+
+Diagnostics policy and strictness
+---------------------------------
+
+Diagnostics are configurable through :class:`nkdsl.SymbolicCompilerOptions`:
+
+* ``diagnostics_enabled``
+* ``diagnostics_min_severity``
+* ``fail_on_warnings``
+* ``max_diagnostics``
+* ``lint_state_sample_size``
+* ``lint_branch_sample_cap``
+* ``lint_max_exact_hilbert_states``
+
+For full details, see :doc:`dsl/linting/index`. For the per-code lint catalog
+with examples and fixes, see :doc:`dsl/linting/messages`.
 
 Caching
 -------

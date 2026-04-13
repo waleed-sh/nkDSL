@@ -21,6 +21,9 @@ The package is built around a simple four-step mental model:
 That description is lowered into a static-shape JAX connectivity kernel
 (default target: ``get_conn_padded``).
 
+Compilation also runs a linting pass that reports symbol, index, and connectivity
+diagnostics early. See :doc:`dsl/linting/index` for details.
+
 .. toctree::
    :maxdepth: 2
    :caption: Getting started

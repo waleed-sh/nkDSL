@@ -69,8 +69,8 @@ The extracted package already includes:
 * symbolic selectors and expression trees
 * immutable update-program builders
 * the symbolic IR
-* a compiler with validation, normalization, analysis, fusion planning, caching,
-  and JAX lowering
+* a compiler with validation, diagnostics linting, normalization, analysis,
+  fusion planning, caching, and JAX lowering
 * compiled operators that expose ``get_conn_padded``
 
 It is still an early package. That means the public surface is usable, while some
