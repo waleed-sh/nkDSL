@@ -62,4 +62,3 @@ class AbstractDiagnosticRule(abc.ABC):
 
 
 __all__ = ["DiagnosticRuleContext", "AbstractDiagnosticRule"]
-
