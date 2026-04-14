@@ -1,9 +1,6 @@
 Changelog
 =========
 
-This page follows a release-notes style inspired by JAX and PyTorch:
-one top-level section per release, with consistent change categories.
-
 Unreleased
 ------------
 

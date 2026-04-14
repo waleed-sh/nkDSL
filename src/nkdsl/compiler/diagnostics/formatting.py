@@ -115,11 +115,12 @@ def format_diagnostics_block(
             f"(errors={counts['error']}, warnings={counts['warning']}, info={counts['info']})"
         )
     ]
-    lines.append(f"Read more: {LINTING_DOCS_MESSAGES_URL}")
-    lines.append(f"Overview: {LINTING_DOCS_INDEX_URL}")
-    lines.extend(format_diagnostic(diagnostic) for diagnostic in shown)
+    lines.extend("\n" + format_diagnostic(diagnostic) for diagnostic in shown)
     if len(diagnostics) > len(shown):
         lines.append(f"... and {len(diagnostics) - len(shown)} more diagnostic(s).")
+
+    lines.append(f"\nRead more: {LINTING_DOCS_MESSAGES_URL}")
+    lines.append(f"Overview: {LINTING_DOCS_INDEX_URL}")
     return "\n".join(lines)
 
 

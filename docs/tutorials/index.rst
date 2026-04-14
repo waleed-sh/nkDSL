@@ -11,3 +11,4 @@ a small variational optimisation loop.
    ising_end_to_end
    heisenberg_end_to_end
    j1j2_end_to_end
+   custom_iterators_and_predicates

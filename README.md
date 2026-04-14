@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/_static/nkDSL.png" alt="nkDSL logo" width="350">
+    <img src="https://raw.githubusercontent.com/waleed-sh/nkDSL/main/docs/_static/nkDSL.png" width="350">
 </p>
 
 <div align="center">
