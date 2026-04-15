@@ -40,14 +40,18 @@ from nkdsl.dsl import SymbolicDiscreteJaxOperator
 from nkdsl.dsl import Update
 from nkdsl.dsl import AbstractIteratorClause
 from nkdsl.dsl import AbstractPredicateClause
+from nkdsl.dsl import AbstractEmissionClause
+from nkdsl.dsl import EmissionClauseSpec
 from nkdsl.dsl import ExpressionContext
 from nkdsl.dsl import SiteSelector
+from nkdsl.dsl import available_emission_clause_names
 from nkdsl.dsl import available_iterator_clause_names
 from nkdsl.dsl import available_predicate_clause_names
 from nkdsl.dsl import affine
 from nkdsl.dsl import identity
 from nkdsl.dsl import permute
 from nkdsl.dsl import register
+from nkdsl.dsl import register_emission_clause
 from nkdsl.dsl import register_iterator_clause
 from nkdsl.dsl import register_predicate_clause
 from nkdsl.dsl import scatter
@@ -153,11 +157,15 @@ __all__ = [
     "SiteSelector",
     "AbstractIteratorClause",
     "AbstractPredicateClause",
+    "AbstractEmissionClause",
+    "EmissionClauseSpec",
     "register",
     "register_iterator_clause",
     "register_predicate_clause",
+    "register_emission_clause",
     "available_iterator_clause_names",
     "available_predicate_clause_names",
+    "available_emission_clause_names",
     # Operator types
     "SymbolicOperator",
     "CompiledOperator",

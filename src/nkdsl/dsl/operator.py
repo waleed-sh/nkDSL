@@ -107,6 +107,11 @@ import numpy as np
 from netket.hilbert import DiscreteHilbert
 
 from nkdsl.debug import event as debug_event
+from nkdsl.dsl.emissions.defaults import ensure_default_emission_clause_registrations
+from nkdsl.dsl.emissions.dispatch import apply_emission_clause
+from nkdsl.dsl.emissions.registry import available_emission_clause_names
+from nkdsl.dsl.emissions.registry import resolve_emission_clause
+from nkdsl.dsl.emissions.types import EmissionClauseSpec
 from nkdsl.dsl.iterators.dispatch import apply_iterator_clause
 from nkdsl.dsl.iterators.defaults import ensure_default_iterator_clause_registrations
 from nkdsl.dsl.iterators.registry import available_iterator_clause_names
@@ -139,6 +144,7 @@ if TYPE_CHECKING:
 
 ensure_default_iterator_clause_registrations()
 ensure_default_predicate_clause_registrations()
+ensure_default_emission_clause_registrations()
 
 
 def _update_op_uses_shift_mod(op: Any) -> bool:
@@ -287,7 +293,14 @@ def _coerce_amplitude(a: Any) -> AmplitudeExpr:
 class _TermInProgress:
     """Mutable accumulator for one in-progress term definition."""
 
-    __slots__ = ("_emissions", "_iterator", "_max_conn_size_hint", "_name", "_predicate")
+    __slots__ = (
+        "_conditional_remaining",
+        "_emissions",
+        "_iterator",
+        "_max_conn_size_hint",
+        "_name",
+        "_predicate",
+    )
 
     def __init__(self, iterator: Any) -> None:
         self._iterator = iterator
@@ -295,6 +308,7 @@ class _TermInProgress:
         self._emissions: list[EmissionSpec] = []
         self._name: "str | None" = None
         self._max_conn_size_hint: "int | None" = None
+        self._conditional_remaining: PredicateExpr | None = None
 
     @property
     def name(self) -> "str | None":
@@ -348,14 +362,43 @@ class _TermInProgress:
         """Returns the current emission count for this term."""
         return len(self._emissions)
 
-    def add_emission(self, update: Any, matrix_element: Any, tag: Any) -> None:
+    @property
+    def has_open_conditional_chain(self) -> bool:
+        """Returns whether an if/elseif chain is currently open."""
+        return self._conditional_remaining is not None
+
+    def close_conditional_chain(self) -> None:
+        """Closes any currently open conditional emission chain."""
+        self._conditional_remaining = None
+
+    def _require_conditional_chain(self, method: str) -> PredicateExpr:
+        if self._conditional_remaining is None:
+            raise ValueError(
+                f".{method}() must follow .emit_if(...) or .emit_elseif(...) "
+                "without intervening term modifiers."
+            )
+        return self._conditional_remaining
+
+    def add_emission(
+        self,
+        update: Any,
+        matrix_element: Any,
+        tag: Any,
+        *,
+        predicate: Any = True,
+        amplitude: Any | None = None,
+    ) -> None:
         prog = _coerce_update(update)
+        if amplitude is not None:
+            matrix_element = amplitude
         amp = _coerce_amplitude(matrix_element)
+        pred = coerce_predicate_expr(predicate)
         self._emissions.append(
             EmissionSpec(
                 update_program=prog,
                 amplitude=amp,
                 branch_tag=tag,
+                predicate=pred,
             )
         )
         debug_event(
@@ -365,9 +408,70 @@ class _TermInProgress:
             update_kind_count=len(prog.ops),
             branch_tag=tag,
             emission_count=len(self._emissions),
+            predicate_op=pred.op,
         )
 
+    def add_conditional_if(
+        self,
+        predicate: Any,
+        update: Any,
+        matrix_element: Any,
+        tag: Any,
+        *,
+        amplitude: Any | None = None,
+    ) -> None:
+        cond = coerce_predicate_expr(predicate)
+        self.close_conditional_chain()
+        self.add_emission(
+            update=update,
+            matrix_element=matrix_element,
+            tag=tag,
+            predicate=cond,
+            amplitude=amplitude,
+        )
+        self._conditional_remaining = PredicateExpr.not_(cond)
+
+    def add_conditional_elseif(
+        self,
+        predicate: Any,
+        update: Any,
+        matrix_element: Any,
+        tag: Any,
+        *,
+        amplitude: Any | None = None,
+    ) -> None:
+        remaining = self._require_conditional_chain("emit_elseif")
+        cond = coerce_predicate_expr(predicate)
+        branch_pred = PredicateExpr.and_(remaining, cond)
+        self.add_emission(
+            update=update,
+            matrix_element=matrix_element,
+            tag=tag,
+            predicate=branch_pred,
+            amplitude=amplitude,
+        )
+        self._conditional_remaining = PredicateExpr.and_(remaining, PredicateExpr.not_(cond))
+
+    def add_conditional_else(
+        self,
+        update: Any,
+        matrix_element: Any,
+        tag: Any,
+        *,
+        amplitude: Any | None = None,
+    ) -> None:
+        remaining = self._require_conditional_chain("emit_else")
+        self.add_emission(
+            update=update,
+            matrix_element=matrix_element,
+            tag=tag,
+            predicate=remaining,
+            amplitude=amplitude,
+        )
+        self.close_conditional_chain()
+
     def to_ir_term(self, auto_name: str) -> SymbolicIRTerm:
+        self.close_conditional_chain()
         if not self._emissions:
             name = self.name if self.name is not None else auto_name
             raise ValueError(
@@ -498,6 +602,24 @@ class SymbolicDiscreteJaxOperator:
             SymbolicDiscreteJaxOperator: This builder for fluent chaining.
         """
         return self._append_predicate(predicate, method_name=method_name)
+
+    def append_emission_clause(
+        self,
+        spec: EmissionClauseSpec,
+        *,
+        method_name: str,
+    ) -> "SymbolicDiscreteJaxOperator":
+        """
+        Appends emission behavior described by one normalized emission clause spec.
+
+        Args:
+            spec: Normalized emission clause action.
+            method_name: Name of the fluent method responsible for the append.
+
+        Returns:
+            SymbolicDiscreteJaxOperator: This builder for fluent chaining.
+        """
+        return self._append_emission_clause(spec, method_name=method_name)
 
     #
     #
@@ -730,6 +852,7 @@ class SymbolicDiscreteJaxOperator:
             This builder (for chaining).
         """
         term = self._require_open("named")
+        term.close_conditional_chain()
         name = str(name).strip()
         if not name:
             raise ValueError("Term name must be a non-empty string.")
@@ -756,6 +879,7 @@ class SymbolicDiscreteJaxOperator:
             This builder (for chaining).
         """
         term = self._require_open("max_conn_size")
+        term.close_conditional_chain()
         hint = int(hint)
         if hint <= 0:
             raise ValueError(f"max_conn_size hint must be a positive integer; got {hint!r}.")
@@ -774,6 +898,7 @@ class SymbolicDiscreteJaxOperator:
     ) -> "SymbolicDiscreteJaxOperator":
         """Composes one predicate into the current term with logical AND."""
         term = self._require_open(method_name)
+        term.close_conditional_chain()
         existing = term.predicate
         if existing.op == "const" and bool(existing.args[0]):
             term.set_predicate(predicate)
@@ -785,6 +910,64 @@ class SymbolicDiscreteJaxOperator:
             tag="DSL",
             predicate_op=term.predicate_op,
             predicate_method=method_name,
+        )
+        return self
+
+    def _append_emission_clause(
+        self,
+        spec: EmissionClauseSpec,
+        *,
+        method_name: str,
+    ) -> "SymbolicDiscreteJaxOperator":
+        """Applies one emission-clause specification to the current term."""
+        term = self._require_open(method_name)
+
+        if spec.mode == "emit":
+            term.close_conditional_chain()
+            term.add_emission(
+                update=_IDENTITY_UPDATE if spec.update is None else spec.update,
+                matrix_element=spec.matrix_element,
+                tag=spec.tag,
+                amplitude=spec.amplitude,
+            )
+        elif spec.mode == "emit_if":
+            term.add_conditional_if(
+                predicate=spec.predicate,
+                update=_IDENTITY_UPDATE if spec.update is None else spec.update,
+                matrix_element=spec.matrix_element,
+                tag=spec.tag,
+                amplitude=spec.amplitude,
+            )
+        elif spec.mode == "emit_elseif":
+            term.add_conditional_elseif(
+                predicate=spec.predicate,
+                update=_IDENTITY_UPDATE if spec.update is None else spec.update,
+                matrix_element=spec.matrix_element,
+                tag=spec.tag,
+                amplitude=spec.amplitude,
+            )
+        elif spec.mode == "emit_else":
+            term.add_conditional_else(
+                update=_IDENTITY_UPDATE if spec.update is None else spec.update,
+                matrix_element=spec.matrix_element,
+                tag=spec.tag,
+                amplitude=spec.amplitude,
+            )
+        else:
+            raise ValueError(
+                f"Unsupported emission clause mode {spec.mode!r}. "
+                "Expected one of: emit, emit_if, emit_elseif, emit_else."
+            )
+
+        debug_event(
+            "applied emission clause",
+            scope="dsl",
+            tag="DSL",
+            clause_method=method_name,
+            clause_mode=spec.mode,
+            emission_count=term.emission_count,
+            branch_tag=spec.tag,
+            has_open_conditional_chain=term.has_open_conditional_chain,
         )
         return self
 
@@ -836,7 +1019,7 @@ class SymbolicDiscreteJaxOperator:
         without splitting into two separate terms.
 
         Matrix-element semantics
-        --------------------
+        ----------------------------
         The matrix-element expression is evaluated in the *source* configuration
         environment ``(x, site_labels)``. There is no access to ``x'`` inside
         matrix-element expressions: ``<x|O|x'>`` is computed from ``x``, not ``x'``.
@@ -856,21 +1039,89 @@ class SymbolicDiscreteJaxOperator:
         Returns:
             This builder (for chaining).
         """
-        term = self._require_open("emit")
-        if update is None:
-            update = _IDENTITY_UPDATE
-        if amplitude is not None:
-            matrix_element = amplitude
-        term.add_emission(update, matrix_element, tag)
-        debug_event(
-            "appended dsl emission",
-            scope="dsl",
-            tag="DSL",
-            emission_count=term.emission_count,
-            used_deprecated_amplitude=amplitude is not None,
-            branch_tag=tag,
+        return self.append_emission_clause(
+            EmissionClauseSpec(
+                mode="emit",
+                update=update,
+                matrix_element=matrix_element,
+                amplitude=amplitude,
+                tag=tag,
+            ),
+            method_name="emit",
         )
-        return self
+
+    def emit_if(
+        self,
+        predicate: Any,
+        update: Any = None,
+        *,
+        matrix_element: Any = 1.0,
+        amplitude: Any | None = None,
+        tag: Any = None,
+    ) -> "SymbolicDiscreteJaxOperator":
+        """
+        Appends the ``if`` branch of a conditional emission chain.
+
+        The branch emits only when *predicate* evaluates to true.
+        Subsequent ``.emit_elseif(...)`` and ``.emit_else(...)`` calls can
+        refine the same chain.
+        """
+        return apply_emission_clause(
+            self,
+            "emit_if",
+            predicate,
+            update,
+            matrix_element=matrix_element,
+            amplitude=amplitude,
+            tag=tag,
+        )
+
+    def emit_elseif(
+        self,
+        predicate: Any,
+        update: Any = None,
+        *,
+        matrix_element: Any = 1.0,
+        amplitude: Any | None = None,
+        tag: Any = None,
+    ) -> "SymbolicDiscreteJaxOperator":
+        """
+        Appends an ``elseif`` branch to the current conditional emission chain.
+
+        This method must directly follow ``emit_if(...)`` or another
+        ``emit_elseif(...)`` on the same term.
+        """
+        return apply_emission_clause(
+            self,
+            "emit_elseif",
+            predicate,
+            update,
+            matrix_element=matrix_element,
+            amplitude=amplitude,
+            tag=tag,
+        )
+
+    def emit_else(
+        self,
+        update: Any = None,
+        *,
+        matrix_element: Any = 1.0,
+        amplitude: Any | None = None,
+        tag: Any = None,
+    ) -> "SymbolicDiscreteJaxOperator":
+        """
+        Appends the ``else`` branch to the current conditional emission chain.
+
+        This branch emits when all prior ``if`` / ``elseif`` predicates are false.
+        """
+        return apply_emission_clause(
+            self,
+            "emit_else",
+            update,
+            matrix_element=matrix_element,
+            amplitude=amplitude,
+            tag=tag,
+        )
 
     #
     #
@@ -978,7 +1229,7 @@ class SymbolicDiscreteJaxOperator:
 
     def __getattr__(self, name: str) -> Any:
         """
-        Resolves dynamically-registered iterator/predicate clause methods.
+        Resolves dynamically-registered iterator/predicate/emission clause methods.
 
         This enables fluent user extensions such as ``builder.my_iterator(...)``
         without adding concrete methods to this class.
@@ -1005,6 +1256,17 @@ class SymbolicDiscreteJaxOperator:
             _bound_predicate.__doc__ = predicate_clause.__doc__
             return _bound_predicate
 
+        emission_clause = resolve_emission_clause(name)
+        if emission_clause is not None:
+
+            def _bound_emission(*args: Any, **kwargs: Any) -> "SymbolicDiscreteJaxOperator":
+                return apply_emission_clause(self, name, *args, **kwargs)
+
+            _bound_emission.__name__ = name
+            _bound_emission.__qualname__ = f"{type(self).__name__}.{name}"
+            _bound_emission.__doc__ = emission_clause.__doc__
+            return _bound_emission
+
         raise AttributeError(f"{type(self).__name__!s} object has no attribute {name!r}")
 
     def __dir__(self) -> list[str]:
@@ -1014,6 +1276,7 @@ class SymbolicDiscreteJaxOperator:
         base = set(super().__dir__())
         base.update(available_iterator_clause_names())
         base.update(available_predicate_clause_names())
+        base.update(available_emission_clause_names())
         return sorted(base)
 
     def __repr__(self) -> str:

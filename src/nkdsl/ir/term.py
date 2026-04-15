@@ -109,11 +109,15 @@ class EmissionSpec:
         update_program: Site-update program mapping ``x -> x'``.
         amplitude: Matrix-element expression evaluated in the source environment.
         branch_tag: Optional diagnostic tag for this emission slot.
+        predicate: Optional emission-local branch predicate.
     """
 
     update_program: UpdateProgram
     amplitude: AmplitudeExpr
     branch_tag: Any = None
+    predicate: PredicateExpr = dataclasses.field(
+        default_factory=lambda: PredicateExpr.constant(True)
+    )
 
     @property
     def matrix_element(self) -> AmplitudeExpr:
@@ -238,6 +242,7 @@ class SymbolicIRTerm:
         result: set = set()
         _collect_free_symbols_pred(self.predicate, result)
         for em in self.effective_emissions:
+            _collect_free_symbols_pred(em.predicate, result)
             _collect_free_symbols(em.amplitude, result)
             _collect_free_symbols_from_ops(em.update_program.ops, result)
         return frozenset(result)
@@ -264,6 +269,8 @@ class SymbolicIRTerm:
         for i, em in enumerate(self.effective_emissions):
             tag_str = f" [tag={em.branch_tag!r}]" if em.branch_tag is not None else ""
             lines.append(f"{inner}emit #{i}{tag_str}:")
+            if not (em.predicate.op == "const" and bool(em.predicate.args[0])):
+                lines.append(f"{inner}  where:     {em.predicate}")
             lines.append(f"{inner}  update:    {em.update_program}")
             lines.append(f"{inner}  amplitude: {em.amplitude}")
 

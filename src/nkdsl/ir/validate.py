@@ -123,6 +123,7 @@ def _validate_term(term: SymbolicIRTerm) -> tuple[str, ...]:
     symbols.extend(_iter_predicate_symbols(term.predicate))
 
     for em in term.effective_emissions:
+        symbols.extend(_iter_predicate_symbols(em.predicate))
         symbols.extend(_iter_amplitude_symbols(em.amplitude))
         for op in em.update_program.ops:
             _validate_update_op(term, op)

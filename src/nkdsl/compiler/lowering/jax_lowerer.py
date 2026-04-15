@@ -537,6 +537,7 @@ def _make_kbody_runner(
             pred = _eval_predicate(predicate_ir, env)
             xp_list, mel_list, valid_list = [], [], []
             for em in emissions:
+                em_pred = _eval_predicate(em.predicate, env)
                 x_prime, uv = _apply_update_program(
                     x,
                     em.update_program,
@@ -552,7 +553,7 @@ def _make_kbody_runner(
                     shift_mod_state_min=shift_mod_state_min,
                     shift_mod_mod_span=shift_mod_mod_span,
                 )
-                valid = pred & uv
+                valid = pred & em_pred & uv
                 mel_cast = jnp.where(
                     valid,
                     jnp.asarray(mel, dtype=output_dtype),
@@ -585,6 +586,7 @@ def _make_kbody_runner(
             pred = _eval_predicate(predicate_ir, env)
             xp_list, mel_list, valid_list = [], [], []
             for em in emissions:
+                em_pred = _eval_predicate(em.predicate, env)
                 x_prime, uv = _apply_update_program(
                     x,
                     em.update_program,
@@ -600,7 +602,7 @@ def _make_kbody_runner(
                     shift_mod_state_min=shift_mod_state_min,
                     shift_mod_mod_span=shift_mod_mod_span,
                 )
-                valid = pred & uv
+                valid = pred & em_pred & uv
                 mel_cast = jnp.where(
                     valid,
                     jnp.asarray(mel, dtype=output_dtype),

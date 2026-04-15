@@ -101,6 +101,7 @@ def iter_term_amplitude_nodes(term: SymbolicIRTerm) -> Iterable[AmplitudeExpr]:
     """
     yield from iter_predicate_amplitude_nodes(term.predicate)
     for emission in term.effective_emissions:
+        yield from iter_predicate_amplitude_nodes(emission.predicate)
         yield from iter_amplitude_nodes(emission.amplitude)
         for op in emission.update_program.ops:
             yield from iter_update_amplitude_nodes(op)

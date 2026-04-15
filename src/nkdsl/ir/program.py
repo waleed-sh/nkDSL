@@ -168,6 +168,15 @@ class SymbolicOperatorIR:
                     "update_program": _serialize_update(t.update_program),
                     "amplitude": _serialize_amplitude(t.amplitude),
                     "branch_tag": t.branch_tag,
+                    "emissions": [
+                        {
+                            "predicate": _serialize_predicate(em.predicate),
+                            "update_program": _serialize_update(em.update_program),
+                            "amplitude": _serialize_amplitude(em.amplitude),
+                            "branch_tag": em.branch_tag,
+                        }
+                        for em in t.effective_emissions
+                    ],
                     "metadata": list(t.metadata),
                     "max_conn_size_hint": t.max_conn_size_hint,
                 }

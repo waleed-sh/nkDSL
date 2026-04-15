@@ -17,6 +17,10 @@
 
 from .context import ExpressionContext
 from .clauses import register
+from .emissions import AbstractEmissionClause
+from .emissions import EmissionClauseSpec
+from .emissions import available_emission_clause_names
+from .emissions import register_emission_clause
 from .iterators import AbstractIteratorClause
 from .iterators import available_iterator_clause_names
 from .iterators import register_iterator_clause
@@ -55,11 +59,15 @@ __all__ = [
     "write",
     "AbstractIteratorClause",
     "AbstractPredicateClause",
+    "AbstractEmissionClause",
+    "EmissionClauseSpec",
     "register",
     "register_iterator_clause",
     "register_predicate_clause",
+    "register_emission_clause",
     "available_iterator_clause_names",
     "available_predicate_clause_names",
+    "available_emission_clause_names",
     "ExpressionContext",
     "site",
     "emitted",
