@@ -53,6 +53,12 @@ diagnostics early. See :doc:`dsl/linting/index` for details.
 
 .. toctree::
    :maxdepth: 2
+   :caption: Advanced Tutorials
+
+   advanced_tutorials/index
+
+.. toctree::
+   :maxdepth: 2
    :caption: Reference
 
    api/index
