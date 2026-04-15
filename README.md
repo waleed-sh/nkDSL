@@ -13,12 +13,12 @@
 
 # nkDSL
 
-`nkDSL` is a standalone extraction of the symbolic operator DSL from [neuraLQX](https://www.github.com/waleed-sh/neuraLQX).
-It provides a compact, declarative way to define discrete operators in [NetKet](https://github.com/netket/netket) and compile them into executable JAX-backed operator kernels.
+`nkDSL` is a standalone symbolic operator DSL which provides a compact, declarative way to define discrete operators in 
+[NetKet](https://github.com/netket/netket) and compile them into executable JAX-backed operator kernels.
 
 > [!WARNING]
 > `nkDSL` is currently **experimental (alpha)** and **not a production release**.
-> We are still testing and refining core behavior, interfaces, and performance.
+> We are testing this idea, still testing and refining core behavior, interfaces, and performance.
 > Expect API changes between releases while the package matures.
 
 ## What it does
