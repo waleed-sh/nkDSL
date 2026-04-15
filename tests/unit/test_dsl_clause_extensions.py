@@ -21,15 +21,19 @@ import numpy as np
 import pytest
 
 import nkdsl
+from nkdsl.dsl import AbstractEmissionClause
 from nkdsl.dsl import AbstractIteratorClause
 from nkdsl.dsl import AbstractPredicateClause
 from nkdsl.dsl import register
+from nkdsl.dsl import register_emission_clause
 from nkdsl.dsl import register_iterator_clause
 from nkdsl.dsl import register_predicate_clause
+from nkdsl.dsl.clauses import apply_emission_clause
 from nkdsl.dsl.clauses import apply_iterator_clause
 from nkdsl.dsl.clauses import apply_predicate_clause
 from nkdsl.dsl.clauses import coerce_iterator_spec
 from nkdsl.dsl.clauses import ensure_default_clause_registrations
+from nkdsl.dsl.emissions.types import EmissionClauseSpec
 
 pytestmark = pytest.mark.unit
 
@@ -44,6 +48,7 @@ def test_default_clause_names_are_exposed_in_registry_and_dir():
 
     iterator_names = nkdsl.available_iterator_clause_names()
     predicate_names = nkdsl.available_predicate_clause_names()
+    emission_names = nkdsl.available_emission_clause_names()
 
     assert "globally" in iterator_names
     assert "for_each_site" in iterator_names
@@ -53,10 +58,14 @@ def test_default_clause_names_are_exposed_in_registry_and_dir():
     assert "for_each_plaquette" in iterator_names
     assert "for_each" in iterator_names
     assert "where" in predicate_names
+    assert "emit_if" in emission_names
+    assert "emit_elseif" in emission_names
+    assert "emit_else" in emission_names
 
     entries = dir(builder)
     assert "for_each_site" in entries
     assert "where" in entries
+    assert "emit_if" in entries
 
 
 def test_custom_iterator_clause_dynamic_method_executes():
@@ -114,7 +123,7 @@ def test_custom_predicate_clause_composes_with_where():
     np.testing.assert_allclose(np.asarray(mels), np.asarray([0.0, 1.0, 1.0, 0.0]))
 
 
-def test_register_decorator_accepts_iterator_and_predicate_clause_classes():
+def test_register_decorator_accepts_iterator_predicate_and_emission_clause_classes():
     @register
     class DecoratorIteratorClause(AbstractIteratorClause):
         clause_name = "decorator_iterator_clause_test"
@@ -129,12 +138,25 @@ def test_register_decorator_accepts_iterator_and_predicate_clause_classes():
         def build_predicate(self, ctx, label: str = "i"):
             return ctx.eq(ctx.site(label).value, 1)
 
+    @register
+    class DecoratorEmissionClause(AbstractEmissionClause):
+        clause_name = "decorator_emission_clause_test"
+
+        def build_emission(self, ctx, label: str = "i"):
+            del ctx
+            return EmissionClauseSpec(
+                mode="emit_if",
+                predicate=nkdsl.site(label).value > 0,
+                update=nkdsl.identity(),
+                matrix_element=2.0,
+            )
+
     hi = _small_hi(3)
     op = (
         nkdsl.SymbolicDiscreteJaxOperator(hi, "decorator")
         .decorator_iterator_clause_test("i")
         .decorator_predicate_clause_test("i")
-        .emit(nkdsl.identity(), matrix_element=2.0)
+        .decorator_emission_clause_test("i")
         .build()
         .compile()
     )
@@ -206,6 +228,9 @@ def test_register_rejects_non_clause_classes():
     with pytest.raises(TypeError, match="Predicate clause must inherit"):
         register_predicate_clause(Plain)  # type: ignore[arg-type]
 
+    with pytest.raises(TypeError, match="Emission clause must inherit"):
+        register_emission_clause(Plain)  # type: ignore[arg-type]
+
 
 def test_iterator_clause_return_validation_errors():
     class InvalidTypeIteratorClause(AbstractIteratorClause):
@@ -249,6 +274,9 @@ def test_abstract_clause_bases_are_not_instantiable():
     with pytest.raises(TypeError):
         AbstractPredicateClause(builder)
 
+    with pytest.raises(TypeError):
+        AbstractEmissionClause(builder)
+
 
 def test_register_factory_forms_and_empty_name_guard():
     class FactoryIteratorClause(AbstractIteratorClause):
@@ -263,6 +291,13 @@ def test_register_factory_forms_and_empty_name_guard():
         def build_predicate(self, ctx):
             return True
 
+    class FactoryEmissionClause(AbstractEmissionClause):
+        clause_name = "factory_emission_clause_test"
+
+        def build_emission(self, ctx):
+            del ctx
+            return EmissionClauseSpec(mode="emit", update=nkdsl.identity(), matrix_element=1.0)
+
     iterator_decorator = register_iterator_clause(name="factory_iter_clause_test", replace=True)
     registered_iter = iterator_decorator(FactoryIteratorClause)
     assert registered_iter is FactoryIteratorClause
@@ -270,6 +305,10 @@ def test_register_factory_forms_and_empty_name_guard():
     predicate_decorator = register_predicate_clause(name="factory_pred_clause_test", replace=True)
     registered_pred = predicate_decorator(FactoryPredicateClause)
     assert registered_pred is FactoryPredicateClause
+
+    emission_decorator = register_emission_clause(name="factory_em_clause_test", replace=True)
+    registered_em = emission_decorator(FactoryEmissionClause)
+    assert registered_em is FactoryEmissionClause
 
     generic_decorator = register(name="factory_generic_clause_test", replace=True)
     generic_registered = generic_decorator(FactoryPredicateClause)
@@ -315,6 +354,9 @@ def test_predicate_conflict_unknown_apply_and_globals_guard_paths():
     with pytest.raises(AttributeError, match="Unknown predicate clause"):
         apply_predicate_clause(builder, "does_not_exist_predicate_clause")
 
+    with pytest.raises(AttributeError, match="Unknown emission clause"):
+        apply_emission_clause(builder, "does_not_exist_emission_clause")
+
     with pytest.raises(TypeError, match="does not accept positional"):
         apply_iterator_clause(builder, "globally", 1)
 
@@ -322,12 +364,15 @@ def test_predicate_conflict_unknown_apply_and_globals_guard_paths():
 def test_default_clause_registration_is_idempotent():
     before_iter = set(nkdsl.available_iterator_clause_names())
     before_pred = set(nkdsl.available_predicate_clause_names())
+    before_em = set(nkdsl.available_emission_clause_names())
 
     ensure_default_clause_registrations()
     ensure_default_clause_registrations()
 
     after_iter = set(nkdsl.available_iterator_clause_names())
     after_pred = set(nkdsl.available_predicate_clause_names())
+    after_em = set(nkdsl.available_emission_clause_names())
 
     assert before_iter <= after_iter
     assert before_pred <= after_pred
+    assert before_em <= after_em
