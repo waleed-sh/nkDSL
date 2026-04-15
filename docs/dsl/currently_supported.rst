@@ -117,6 +117,15 @@ These are the main fluent clauses on :class:`nkdsl.DOperator` or
 ``emit(update, matrix_element=..., tag=...)``
    add one emitted branch to the current term
 
+``emit_if(predicate, update, matrix_element=..., tag=...)``
+   start a conditional emission chain (if branch)
+
+``emit_elseif(predicate, update, matrix_element=..., tag=...)``
+   extend the current conditional chain with an elseif branch
+
+``emit_else(update, matrix_element=..., tag=...)``
+   close the current conditional chain with an else branch
+
 ``named(name)``
    give the current term a readable diagnostic name
 
@@ -236,6 +245,7 @@ model:
 
 * one iterator visit may produce several emitted branches
 * each ``emit(...)`` call adds one branch
+* conditional chains are supported through ``emit_if/emit_elseif/emit_else``
 * duplicate emitted configurations are not automatically merged
 
 In other words, the connected output is currently a branch multiset, not a

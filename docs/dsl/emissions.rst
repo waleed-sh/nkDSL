@@ -26,6 +26,32 @@ Multi-emission semantics
 Multiple emissions share the same iterator visit and predicate evaluation. This
 is often cleaner and cheaper than repeating the iterator block.
 
+Conditional emission chains
+---------------------------
+
+nkDSL also supports ``if / elseif / else`` style branching at the emission level.
+
+.. code-block:: python
+
+   op = (
+       SymbolicDiscreteJaxOperator(hi, "piecewise")
+       .for_each_site("i")
+       .emit_if(site("i") == 0, write("i", 1), matrix_element=1.0, tag="if")
+       .emit_elseif(site("i") == 1, write("i", 2), matrix_element=2.0, tag="elseif")
+       .emit_else(write("i", 3), matrix_element=3.0, tag="else")
+       .build()
+   )
+
+Chaining rules:
+
+* ``emit_if(...)`` starts a new conditional chain.
+* ``emit_elseif(...)`` extends the current chain.
+* ``emit_else(...)`` closes the current chain.
+* Calling plain ``emit(...)`` closes any currently open chain.
+
+Each branch still contributes one padded branch slot. Inactive branches keep
+their emitted ``x'`` row but have matrix element ``0``.
+
 Branch multiset semantics
 -------------------------
 
@@ -61,3 +87,12 @@ to a compatible complex dtype during ``build()``.
    )
 
    # op.dtype is complex-valued after promotion
+
+Extending emission clauses
+--------------------------
+
+Emission methods are now first-class clause extension points, similar to
+iterators and predicates. Advanced users can register custom emission clauses
+by subclassing :class:`nkdsl.AbstractEmissionClause`.
+
+For a full extension walkthrough, see :doc:`../guides/extending_dsl/emissions`.

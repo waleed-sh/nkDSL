@@ -16,6 +16,13 @@ New features
   ``dtype=...``. Declared defaults are now used during compilation/evaluation
   and are no longer reported as unresolved free symbols.
 
+* Added conditional emission chaining with ``emit_if(...)``,
+  ``emit_elseif(...)``, and ``emit_else(...)``.
+
+* Added first-class emission clause extensions via
+  :class:`nkdsl.AbstractEmissionClause`, :func:`nkdsl.register_emission_clause`,
+  and :func:`nkdsl.available_emission_clause_names`.
+
 Improvements
 ~~~~~~~~~~~~
 

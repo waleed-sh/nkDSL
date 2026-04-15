@@ -19,6 +19,7 @@ The extension points are separated by concern:
 
 * **Iterator clauses** decide where the term iterates.
 * **Predicate clauses** decide when a visit is active.
+* **Emission clauses** decide how branches are emitted (including conditional chains).
 
 Use the pages below as implementation guides:
 
@@ -27,3 +28,4 @@ Use the pages below as implementation guides:
 
    iterators
    predicates
+   emissions
