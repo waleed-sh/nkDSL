@@ -23,6 +23,12 @@ New features
   :class:`nkdsl.AbstractEmissionClause`, :func:`nkdsl.register_emission_clause`,
   and :func:`nkdsl.available_emission_clause_names`.
 
+* Added fluent math helpers on :class:`nkdsl.AmplitudeExpr` so matrix-element
+  expressions can be written as chained calls like
+  ``(site("i").value + 1).sqrt().conj()`` (including ``neg()``, ``abs_()``,
+  ``wrap_mod()``, and ``pow(...)``), while preserving existing
+  ``AmplitudeExpr.<helper>(...)`` usage.
+
 Improvements
 ~~~~~~~~~~~~
 

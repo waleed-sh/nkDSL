@@ -67,6 +67,19 @@ def test_amplitude_expr_constructors_render_and_coercion():
     assert symbols == {"kappa"}
 
 
+def test_amplitude_expr_fluent_math_helpers_match_class_style():
+    expr = nkdsl.site("i").value + 1
+
+    fluent = expr.sqrt().conj().abs_().wrap_mod()
+    class_style = nkdsl.AmplitudeExpr.wrap_mod(
+        nkdsl.AmplitudeExpr.abs_(nkdsl.AmplitudeExpr.conj(nkdsl.AmplitudeExpr.sqrt(expr)))
+    )
+
+    assert fluent == class_style
+    assert nkdsl.AmplitudeExpr.sqrt(4).op == "sqrt"
+    assert str((nkdsl.symbol("alpha") + 2).pow(2)) == "((%alpha + 2)^2)"
+
+
 def test_predicate_expr_logic_and_free_symbols():
     x_i = nkdsl.site("i").value
     pred = nkdsl.PredicateExpr.and_(

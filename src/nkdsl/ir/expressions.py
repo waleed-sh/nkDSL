@@ -225,65 +225,56 @@ class AmplitudeExpr:
             return cls(op="symbol", args=(normalized_name, tuple(declaration)))
         return cls(op="symbol", args=(normalized_name,))
 
-    @classmethod
-    def neg(cls, operand: Any) -> "AmplitudeExpr":
+    def neg(self) -> "AmplitudeExpr":
         """Builds a unary negation expression node."""
-        return cls(op="neg", args=(coerce_amplitude_expr(operand),))
+        return AmplitudeExpr(op="neg", args=(coerce_amplitude_expr(self),))
 
-    @classmethod
-    def sqrt(cls, operand: Any) -> "AmplitudeExpr":
+    def sqrt(self) -> "AmplitudeExpr":
         """Builds a square-root expression node."""
-        return cls(op="sqrt", args=(coerce_amplitude_expr(operand),))
+        return AmplitudeExpr(op="sqrt", args=(coerce_amplitude_expr(self),))
 
-    @classmethod
-    def conj(cls, operand: Any) -> "AmplitudeExpr":
+    def conj(self) -> "AmplitudeExpr":
         """Builds a complex-conjugate expression node."""
-        return cls(op="conj", args=(coerce_amplitude_expr(operand),))
+        return AmplitudeExpr(op="conj", args=(coerce_amplitude_expr(self),))
 
-    @classmethod
-    def add(cls, left: Any, right: Any) -> "AmplitudeExpr":
+    def add(self, other: Any) -> "AmplitudeExpr":
         """Builds an addition expression node."""
-        return cls(
+        return AmplitudeExpr(
             op="add",
-            args=(coerce_amplitude_expr(left), coerce_amplitude_expr(right)),
+            args=(coerce_amplitude_expr(self), coerce_amplitude_expr(other)),
         )
 
-    @classmethod
-    def sub(cls, left: Any, right: Any) -> "AmplitudeExpr":
+    def sub(self, other: Any) -> "AmplitudeExpr":
         """Builds a subtraction expression node."""
-        return cls(
+        return AmplitudeExpr(
             op="sub",
-            args=(coerce_amplitude_expr(left), coerce_amplitude_expr(right)),
+            args=(coerce_amplitude_expr(self), coerce_amplitude_expr(other)),
         )
 
-    @classmethod
-    def mul(cls, left: Any, right: Any) -> "AmplitudeExpr":
+    def mul(self, other: Any) -> "AmplitudeExpr":
         """Builds a multiplication expression node."""
-        return cls(
+        return AmplitudeExpr(
             op="mul",
-            args=(coerce_amplitude_expr(left), coerce_amplitude_expr(right)),
+            args=(coerce_amplitude_expr(self), coerce_amplitude_expr(other)),
         )
 
-    @classmethod
-    def div(cls, left: Any, right: Any) -> "AmplitudeExpr":
+    def div(self, other: Any) -> "AmplitudeExpr":
         """Builds a division expression node."""
-        return cls(
+        return AmplitudeExpr(
             op="div",
-            args=(coerce_amplitude_expr(left), coerce_amplitude_expr(right)),
+            args=(coerce_amplitude_expr(self), coerce_amplitude_expr(other)),
         )
 
-    @classmethod
-    def pow(cls, base: Any, exponent: Any) -> "AmplitudeExpr":
+    def pow(self, exponent: Any) -> "AmplitudeExpr":
         """Builds a power expression node (base ** exponent)."""
-        return cls(
+        return AmplitudeExpr(
             op="pow",
-            args=(coerce_amplitude_expr(base), coerce_amplitude_expr(exponent)),
+            args=(coerce_amplitude_expr(self), coerce_amplitude_expr(exponent)),
         )
 
-    @classmethod
-    def abs_(cls, operand: Any) -> "AmplitudeExpr":
+    def abs_(self) -> "AmplitudeExpr":
         """Builds an absolute-value expression node (|operand|)."""
-        return cls(op="abs_", args=(coerce_amplitude_expr(operand),))
+        return AmplitudeExpr(op="abs_", args=(coerce_amplitude_expr(self),))
 
     @classmethod
     def static_index(cls, flat_index: int) -> "AmplitudeExpr":
@@ -319,37 +310,36 @@ class AmplitudeExpr:
             )
         return cls(op="static_emitted_index", args=(idx,))
 
-    @classmethod
-    def wrap_mod(cls, operand: Any) -> "AmplitudeExpr":
+    def wrap_mod(self) -> "AmplitudeExpr":
         """Builds a Hilbert-aware modulo-wrap node."""
-        return cls(op="wrap_mod", args=(coerce_amplitude_expr(operand),))
+        return AmplitudeExpr(op="wrap_mod", args=(coerce_amplitude_expr(self),))
 
     def __add__(self, other: Any) -> "AmplitudeExpr":
-        return self.add(self, other)
+        return self.add(other)
 
     def __radd__(self, other: Any) -> "AmplitudeExpr":
-        return self.add(other, self)
+        return AmplitudeExpr.add(other, self)
 
     def __sub__(self, other: Any) -> "AmplitudeExpr":
-        return self.sub(self, other)
+        return self.sub(other)
 
     def __rsub__(self, other: Any) -> "AmplitudeExpr":
-        return self.sub(other, self)
+        return AmplitudeExpr.sub(other, self)
 
     def __mul__(self, other: Any) -> "AmplitudeExpr":
-        return self.mul(self, other)
+        return self.mul(other)
 
     def __rmul__(self, other: Any) -> "AmplitudeExpr":
-        return self.mul(other, self)
+        return AmplitudeExpr.mul(other, self)
 
     def __truediv__(self, other: Any) -> "AmplitudeExpr":
-        return self.div(self, other)
+        return self.div(other)
 
     def __rtruediv__(self, other: Any) -> "AmplitudeExpr":
-        return self.div(other, self)
+        return AmplitudeExpr.div(other, self)
 
     def __neg__(self) -> "AmplitudeExpr":
-        return self.neg(self)
+        return self.neg()
 
     #
     #
