@@ -32,7 +32,9 @@ New features
 Improvements
 ~~~~~~~~~~~~
 
-* None.
+* Improved operator algebra ergonomics: ``sum([op1, op2, ...])`` now works for
+  symbolic and compiled operators by treating numeric zero as the additive
+  identity in reverse-add dispatch (``0 + op -> op``).
 
 Backwards incompatible changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

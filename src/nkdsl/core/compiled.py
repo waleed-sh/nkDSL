@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import inspect
+import numbers
 import re
 from typing import Any, Callable
 
@@ -30,6 +31,11 @@ from nkdsl.debug import event as debug_event
 
 _DEFAULT_CONNECTION_METHOD: str = "get_conn_padded"
 _DYNAMIC_CLASS_CACHE: dict[tuple[type[Any], str], type[Any]] = {}
+
+
+def _is_additive_identity(value: Any) -> bool:
+    """Returns True when ``value`` is a numeric zero usable as additive identity."""
+    return isinstance(value, numbers.Number) and not isinstance(value, bool) and value == 0
 
 
 class _CompiledOperatorMixin:
@@ -101,6 +107,8 @@ class _CompiledOperatorMixin:
         return super().__add__(other)
 
     def __radd__(self, other):
+        if _is_additive_identity(other):
+            return self
         if isinstance(other, AbstractOperator):
             from netket.operator import SumOperator
 

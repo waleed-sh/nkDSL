@@ -18,6 +18,7 @@
 from __future__ import annotations
 
 import abc
+import numbers
 from typing import Any
 
 from netket.hilbert import DiscreteHilbert
@@ -25,6 +26,11 @@ from netket.operator import AbstractOperator, DiscreteJaxOperator
 
 from nkdsl.errors import SymbolicOperatorExecutionError
 from nkdsl.ir.program import SymbolicOperatorIR
+
+
+def _is_additive_identity(value: Any) -> bool:
+    """Returns True when ``value`` is a numeric zero usable as additive identity."""
+    return isinstance(value, numbers.Number) and not isinstance(value, bool) and value == 0
 
 
 class AbstractSymbolicOperator(DiscreteJaxOperator):
@@ -142,6 +148,8 @@ class AbstractSymbolicOperator(DiscreteJaxOperator):
         return super().__add__(other)
 
     def __radd__(self, other):
+        if _is_additive_identity(other):
+            return self
         if isinstance(other, AbstractOperator):
             from netket.operator import SumOperator
 

@@ -145,6 +145,8 @@ def test_abstract_symbolic_operator_runtime_and_arithmetic_paths():
     assert isinstance(compiled + op, SumOperator)
     assert isinstance(op @ compiled, ProductOperator)
     assert isinstance(compiled @ op, ProductOperator)
+    assert (0 + op) is op
+    assert isinstance(sum([op, op]), SumOperator)
 
     with pytest.raises(TypeError):
         _ = op + 1
@@ -168,6 +170,8 @@ def test_base_apply_scalar_notimplemented_and_compiled_fallback_dunders():
 
     compiled = _compiled_identity(hi, name="compiled-fallback")
     assert "CompiledOperator(" in repr(compiled)
+    assert (0 + compiled) is compiled
+    assert isinstance(sum([compiled, compiled]), SumOperator)
 
     with pytest.raises(TypeError):
         _ = compiled + 1
