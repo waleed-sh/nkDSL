@@ -100,6 +100,54 @@ def test_diagnostics_pass_reports_static_index_bounds():
         SymbolicDiagnosticsPass().run(ctx)
 
 
+def test_diagnostics_pass_reports_potential_zero_division_by_site_values():
+    hi = nk.hilbert.Fock(n_max=2, N=1)
+    op = (
+        nkdsl.SymbolicDiscreteJaxOperator(hi, "div-site")
+        .for_each_site("i")
+        .emit(nkdsl.identity(), matrix_element=1 / nkdsl.site("i").value)
+        .build()
+    )
+    ctx = _context_for_operator(op, diagnostics_min_severity="error")
+    with pytest.raises(SymbolicDiagnosticsError, match="NKDSL-E003"):
+        SymbolicDiagnosticsPass().run(ctx)
+
+
+def test_diagnostics_pass_reports_potential_zero_division_by_emitted_values():
+    hi = nk.hilbert.Fock(n_max=2, N=1)
+    op = (
+        nkdsl.SymbolicDiscreteJaxOperator(hi, "div-emitted")
+        .for_each_site("i")
+        .emit(nkdsl.identity(), matrix_element=1 / nkdsl.emitted("i").value)
+        .build()
+    )
+    ctx = _context_for_operator(op, diagnostics_min_severity="error")
+    with pytest.raises(SymbolicDiagnosticsError, match="NKDSL-E003"):
+        SymbolicDiagnosticsPass().run(ctx)
+
+
+@pytest.mark.parametrize(
+    "matrix_element",
+    (
+        lambda: 1 / nkdsl.source_index(0),
+        lambda: 1 / nkdsl.target_index(0),
+    ),
+)
+def test_diagnostics_pass_reports_potential_zero_division_by_source_target_indices(
+    matrix_element,
+):
+    hi = nk.hilbert.Fock(n_max=2, N=1)
+    op = (
+        nkdsl.SymbolicDiscreteJaxOperator(hi, "div-flat-index")
+        .globally()
+        .emit(nkdsl.identity(), matrix_element=matrix_element())
+        .build()
+    )
+    ctx = _context_for_operator(op, diagnostics_min_severity="error")
+    with pytest.raises(SymbolicDiagnosticsError, match="NKDSL-E003"):
+        SymbolicDiagnosticsPass().run(ctx)
+
+
 def test_diagnostics_pass_can_fail_on_warnings():
     hi = nk.hilbert.Fock(n_max=1, N=1)
     op = (

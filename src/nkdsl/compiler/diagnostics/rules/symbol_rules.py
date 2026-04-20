@@ -17,10 +17,13 @@
 
 from __future__ import annotations
 
+from nkdsl.compiler.diagnostics.traversals import iter_term_amplitude_nodes
 from nkdsl.compiler.diagnostics.models import DSLDiagnostic
 from nkdsl.compiler.diagnostics.rules.base import AbstractDiagnosticRule
 from nkdsl.compiler.diagnostics.rules.base import DiagnosticRuleContext
 from nkdsl.compiler.diagnostics.traversals import iter_term_static_index_nodes
+from nkdsl.ir.expressions import AmplitudeExpr
+from nkdsl.ir.expressions import parse_symbol_declaration_args
 
 
 class UnresolvedFreeSymbolsRule(AbstractDiagnosticRule):
@@ -86,4 +89,61 @@ class StaticIndexBoundsRule(AbstractDiagnosticRule):
         return tuple(diagnostics)
 
 
-__all__ = ["UnresolvedFreeSymbolsRule", "StaticIndexBoundsRule"]
+def _is_direct_site_value_read(expr: AmplitudeExpr) -> bool:
+    """Returns ``True`` when *expr* is a direct runtime site-value read."""
+    if expr.op in {"static_index", "static_emitted_index"}:
+        return True
+    if expr.op != "symbol":
+        return False
+    name, _declaration = parse_symbol_declaration_args(expr.args)
+    return (name.startswith("site:") and name.endswith(":value")) or (
+        name.startswith("emit:") and name.endswith(":value")
+    )
+
+
+class PotentialZeroDivisionRule(AbstractDiagnosticRule):
+    """Reports direct divisions by runtime state values that may be zero."""
+
+    @property
+    def name(self) -> str:
+        return "potential_zero_division"
+
+    def run(self, context: DiagnosticRuleContext) -> tuple[DSLDiagnostic, ...]:
+        diagnostics: list[DSLDiagnostic] = []
+        for term in context.ir.terms:
+            hits = 0
+            for node in iter_term_amplitude_nodes(term):
+                if node.op != "div":
+                    continue
+                denominator = node.args[1]
+                if isinstance(denominator, AmplitudeExpr) and _is_direct_site_value_read(
+                    denominator
+                ):
+                    hits += 1
+            if hits == 0:
+                continue
+            diagnostics.append(
+                DSLDiagnostic.create(
+                    code="NKDSL-E003",
+                    severity="error",
+                    message=(
+                        f"Detected {hits} division expression(s) whose denominator is a runtime "
+                        "state value and may be zero."
+                    ),
+                    operator_name=context.ir.operator_name,
+                    term_name=term.name,
+                    suggestion=(
+                        "Guard the division with a non-zero predicate (for example `site(i) != 0`) "
+                        "or rewrite using an explicit conditional branch."
+                    ),
+                    context={"potential_zero_division_count": hits},
+                )
+            )
+        return tuple(diagnostics)
+
+
+__all__ = [
+    "UnresolvedFreeSymbolsRule",
+    "StaticIndexBoundsRule",
+    "PotentialZeroDivisionRule",
+]

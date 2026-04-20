@@ -35,6 +35,9 @@ from nkdsl.compiler.diagnostics.rules.structural_rules import (
     MissingBranchTagRule,
 )
 from nkdsl.compiler.diagnostics.rules.symbol_rules import (
+    PotentialZeroDivisionRule,
+)
+from nkdsl.compiler.diagnostics.rules.symbol_rules import (
     StaticIndexBoundsRule,
 )
 from nkdsl.compiler.diagnostics.rules.symbol_rules import (
@@ -51,6 +54,7 @@ def default_diagnostic_rules() -> tuple[AbstractDiagnosticRule, ...]:
     return (
         UnresolvedFreeSymbolsRule(),
         StaticIndexBoundsRule(),
+        PotentialZeroDivisionRule(),
         ConstantFalsePredicateRule(),
         DuplicateEmissionRule(),
         MaxConnHintLowerBoundRule(),
@@ -64,6 +68,7 @@ __all__ = [
     "DiagnosticRuleContext",
     "UnresolvedFreeSymbolsRule",
     "StaticIndexBoundsRule",
+    "PotentialZeroDivisionRule",
     "ConstantFalsePredicateRule",
     "DuplicateEmissionRule",
     "MaxConnHintLowerBoundRule",

@@ -312,6 +312,22 @@ def _eval_amplitude(
     raise ValueError(f"Unknown amplitude op: {op!r}")
 
 
+def _eval_predicate_when(active: Any, expr: PredicateExpr, env: dict[str, Any]) -> Any:
+    """
+    Evaluates *expr* only when *active* is true, otherwise returns ``False``.
+
+    This uses ``jax.lax.cond`` to avoid runtime execution of masked branches,
+    which prevents invalid inactive-path numerics (for example divide-by-zero)
+    from polluting downstream autodiff.
+    """
+    return jax.lax.cond(
+        jnp.bool_(active),
+        lambda _unused: jnp.bool_(_eval_predicate(expr, env)),
+        lambda _unused: jnp.bool_(False),
+        operand=None,
+    )
+
+
 def _eval_predicate(expr: PredicateExpr, env: dict[str, Any]) -> Any:
     op = expr.op
     if op == "const":
@@ -319,9 +335,20 @@ def _eval_predicate(expr: PredicateExpr, env: dict[str, Any]) -> Any:
     if op == "not":
         return ~_eval_predicate(expr.args[0], env)
     if op == "and":
-        return _eval_predicate(expr.args[0], env) & _eval_predicate(expr.args[1], env)
+        result = jnp.bool_(True)
+        for arg in expr.args:
+            result = _eval_predicate_when(result, arg, env)
+        return result
     if op == "or":
-        return _eval_predicate(expr.args[0], env) | _eval_predicate(expr.args[1], env)
+        result = jnp.bool_(False)
+        for arg in expr.args:
+            result = jax.lax.cond(
+                jnp.bool_(result),
+                lambda _unused: jnp.bool_(True),
+                lambda _unused, pred=arg: jnp.bool_(_eval_predicate(pred, env)),
+                operand=None,
+            )
+        return result
     left = _eval_amplitude(expr.args[0], env)
     right = _eval_amplitude(expr.args[1], env)
     if op == "eq":
@@ -537,7 +564,7 @@ def _make_kbody_runner(
             pred = _eval_predicate(predicate_ir, env)
             xp_list, mel_list, valid_list = [], [], []
             for em in emissions:
-                em_pred = _eval_predicate(em.predicate, env)
+                em_pred = _eval_predicate_when(pred, em.predicate, env)
                 x_prime, uv = _apply_update_program(
                     x,
                     em.update_program,
@@ -546,18 +573,23 @@ def _make_kbody_runner(
                     shift_mod_state_min=shift_mod_state_min,
                     shift_mod_mod_span=shift_mod_mod_span,
                 )
-                amp_env = _augment_env_with_emitted_state(env, x_prime, ())
-                mel = _eval_amplitude(
-                    em.amplitude,
-                    amp_env,
-                    shift_mod_state_min=shift_mod_state_min,
-                    shift_mod_mod_span=shift_mod_mod_span,
-                )
-                valid = pred & em_pred & uv
-                mel_cast = jnp.where(
+                valid = jnp.bool_(em_pred & uv)
+
+                def _eval_mel(_unused: Any) -> Any:
+                    amp_env = _augment_env_with_emitted_state(env, x_prime, ())
+                    mel = _eval_amplitude(
+                        em.amplitude,
+                        amp_env,
+                        shift_mod_state_min=shift_mod_state_min,
+                        shift_mod_mod_span=shift_mod_mod_span,
+                    )
+                    return jnp.asarray(mel, dtype=output_dtype)
+
+                mel_cast = jax.lax.cond(
                     valid,
-                    jnp.asarray(mel, dtype=output_dtype),
-                    jnp.zeros((), dtype=output_dtype),
+                    _eval_mel,
+                    lambda _unused: jnp.zeros((), dtype=output_dtype),
+                    operand=None,
                 )
                 xp_list.append(x_prime)
                 mel_list.append(mel_cast)
@@ -586,7 +618,7 @@ def _make_kbody_runner(
             pred = _eval_predicate(predicate_ir, env)
             xp_list, mel_list, valid_list = [], [], []
             for em in emissions:
-                em_pred = _eval_predicate(em.predicate, env)
+                em_pred = _eval_predicate_when(pred, em.predicate, env)
                 x_prime, uv = _apply_update_program(
                     x,
                     em.update_program,
@@ -595,18 +627,23 @@ def _make_kbody_runner(
                     shift_mod_state_min=shift_mod_state_min,
                     shift_mod_mod_span=shift_mod_mod_span,
                 )
-                amp_env = _augment_env_with_emitted_state(env, x_prime, labels)
-                mel = _eval_amplitude(
-                    em.amplitude,
-                    amp_env,
-                    shift_mod_state_min=shift_mod_state_min,
-                    shift_mod_mod_span=shift_mod_mod_span,
-                )
-                valid = pred & em_pred & uv
-                mel_cast = jnp.where(
+                valid = jnp.bool_(em_pred & uv)
+
+                def _eval_mel(_unused: Any) -> Any:
+                    amp_env = _augment_env_with_emitted_state(env, x_prime, labels)
+                    mel = _eval_amplitude(
+                        em.amplitude,
+                        amp_env,
+                        shift_mod_state_min=shift_mod_state_min,
+                        shift_mod_mod_span=shift_mod_mod_span,
+                    )
+                    return jnp.asarray(mel, dtype=output_dtype)
+
+                mel_cast = jax.lax.cond(
                     valid,
-                    jnp.asarray(mel, dtype=output_dtype),
-                    jnp.zeros((), dtype=output_dtype),
+                    _eval_mel,
+                    lambda _unused: jnp.zeros((), dtype=output_dtype),
+                    operand=None,
                 )
                 xp_list.append(x_prime)
                 mel_list.append(mel_cast)

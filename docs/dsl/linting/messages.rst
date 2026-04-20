@@ -8,7 +8,8 @@ Quick navigation
 ----------------
 
 Errors:
-   :ref:`NKDSL-E001 <lint-code-nkdsl-e001>`, :ref:`NKDSL-E002 <lint-code-nkdsl-e002>`
+   :ref:`NKDSL-E001 <lint-code-nkdsl-e001>`, :ref:`NKDSL-E002 <lint-code-nkdsl-e002>`,
+   :ref:`NKDSL-E003 <lint-code-nkdsl-e003>`
 
 Warnings:
    :ref:`NKDSL-W101 <lint-code-nkdsl-w101>`, :ref:`NKDSL-W103 <lint-code-nkdsl-w103>`,
@@ -78,6 +79,33 @@ How to resolve:
    Ensure every static index expression is valid for the current Hilbert size.
    If the index should depend on iterator labels, use symbolic selector/index
    expressions instead of fixed constants.
+
+
+.. _lint-code-nkdsl-e003:
+
+NKDSL-E003: potential zero division on runtime state values
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Meaning:
+   A division denominator is a direct runtime state read that may be zero.
+   This includes iterator selectors (for example ``site("i").value``,
+   ``emitted("i").value``) and flat-index source/target reads
+   (``source_index(k)``, ``target_index(k)``).
+
+Typical causes:
+   Matrix elements use expressions like ``1 / site("i").value`` or
+   ``1 / source_index(0)`` without a non-zero guard.
+
+Example:
+
+.. code-block:: python
+
+   .emit(identity(), matrix_element=1 / target_index(0))
+
+How to resolve:
+   Add an explicit non-zero guard (for example ``where(site("i").value != 0)``),
+   or rewrite with explicit conditional branching so division executes only on
+   safe branches.
 
 Warnings
 --------

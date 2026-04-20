@@ -21,6 +21,7 @@ that are easy to miss in code review:
 
 * free parameters left unresolved
 * static index expressions outside Hilbert bounds
+* divisions by runtime state values that may be zero
 * terms that never emit due to constant-false predicates
 * generated states that violate support, constraints, or local basis rules
 

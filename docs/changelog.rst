@@ -49,7 +49,13 @@ Deprecations
 Bug fixes
 ~~~~~~~~~
 
-* None.
+* Fixed masked-branch evaluation in the JAX lowerer so matrix-element
+  expressions are evaluated lazily on active branches, avoiding inactive-path
+  numerical issues (for example ``1 / site("i").value`` when masked out).
+
+* Added lint error ``NKDSL-E003`` for potential division-by-zero on direct
+  runtime state reads, including ``site("i").value``, ``emitted("i").value``,
+  ``source_index(k)``, and ``target_index(k)``.
 
 Documentation
 ~~~~~~~~~~~~~
@@ -57,6 +63,9 @@ Documentation
 * Updated DSL docs for symbolic parameters, including examples for
   ``symbol("J", default=..., doc=..., dtype=...)`` and guidance on how this
   interacts with lint diagnostics for unresolved symbols.
+
+* Extended linting docs with the new ``NKDSL-E003`` message and guidance for
+  guarding divisions over runtime state values.
 
 
 

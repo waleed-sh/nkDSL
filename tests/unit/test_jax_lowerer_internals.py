@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import types
 
+import jax
 import jax.numpy as jnp
 import netket as nk
 import numpy as np
@@ -131,6 +132,36 @@ def test_eval_amplitude_and_predicate_all_main_paths():
     )
     assert bool(jl.eval_predicate(pred, env)) is True
     assert bool(jl.eval_predicate(nkdsl.PredicateExpr.not_(False), env)) is True
+
+
+def test_eval_predicate_respects_all_nary_operands():
+    env: dict[str, object] = {}
+    pred_and = nkdsl.PredicateExpr.and_(True, True, False)
+    pred_or = nkdsl.PredicateExpr.or_(False, False, True)
+
+    assert bool(jl.eval_predicate(pred_and, env)) is False
+    assert bool(jl.eval_predicate(pred_or, env)) is True
+
+
+def test_masked_amplitude_division_keeps_gradients_finite():
+    term = SymbolicIRTerm.create(
+        name="masked-div",
+        iterator=KBodyIteratorSpec(labels=("i",), index_sets=((0,),)),
+        predicate=nkdsl.site("i").value > 0,
+        update_program=nkdsl.identity().to_program(),
+        amplitude=1 / nkdsl.site("i").value,
+    )
+    runner = jl.make_kbody_runner(term, hilbert_size=1, output_dtype=np.float64)
+
+    def masked_mel(v: jnp.ndarray) -> jnp.ndarray:
+        x = jnp.asarray([v], dtype=jnp.float32)
+        _xp, mel, _valid = runner(x)
+        return mel.reshape(-1)[0]
+
+    assert np.isclose(float(masked_mel(0.0)), 0.0)
+    grad_at_zero = float(jax.grad(masked_mel)(jnp.asarray(0.0, dtype=jnp.float32)))
+    assert np.isfinite(grad_at_zero)
+    assert np.isclose(grad_at_zero, 0.0)
 
 
 def test_apply_single_update_op_variants():
