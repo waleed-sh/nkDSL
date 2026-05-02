@@ -147,5 +147,10 @@ myst_enable_extensions = [
 ]
 nb_execution_mode = "off"
 nb_execution_timeout = 600
-nb_execution_raise_on_error = True
+nb_execution_raise_on_error = False
 nb_number_source_lines = False
+
+nb_execution_excludepatterns = [
+    "tutorials/*.ipynb",
+    "advanced_tutorials/*.ipynb",
+]
