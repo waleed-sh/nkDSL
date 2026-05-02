@@ -49,15 +49,19 @@ Chaining rules:
 * ``emit_else(...)`` closes the current chain.
 * Calling plain ``emit(...)`` closes any currently open chain.
 
-Each branch still contributes one padded branch slot. Inactive branches keep
-their emitted ``x'`` row but have matrix element ``0``.
+Active branches contribute candidate connected states. Before final padding,
+duplicate ``x'`` targets are coalesced (matrix elements summed) and
+zero-amplitude components are removed.
 
-Branch multiset semantics
--------------------------
+Connected-state dedup semantics
+-------------------------------
 
-Connected states are not automatically deduplicated. If two branches emit the
-same ``x'``, both rows remain present in the padded output. Any later reduction
-that wants merged matrix elements must do so explicitly.
+Connected states are deduplicated by default. If two branches emit the same
+``x'``, they are merged into one row and their matrix elements are summed.
+Entries with final matrix element ``0`` are dropped before padding.
+
+Set ``deduplicate_connected_components=False`` at compile time if you need raw
+per-branch connectivity output.
 
 Source and emitted state access
 -------------------------------

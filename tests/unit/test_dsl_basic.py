@@ -85,12 +85,12 @@ def test_for_each_site_where_shift():
     expected_xp = np.asarray(
         [
             [0, 0, 2],
-            [1, -1, 2],
             [1, 0, 1],
+            [0, 0, 0],
         ],
         dtype=np.int32,
     )
-    expected_mels = np.asarray([1.0, 0.0, 2.0])
+    expected_mels = np.asarray([1.0, 2.0, 0.0])
 
     np.testing.assert_array_equal(np.asarray(xp), expected_xp)
     np.testing.assert_allclose(np.asarray(mels), expected_mels)

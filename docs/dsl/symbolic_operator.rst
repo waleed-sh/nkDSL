@@ -45,6 +45,18 @@ holds typed IR terms and can later be compiled.
 
 Calling ``compile()`` on the builder is equivalent to ``build().compile()``.
 
+Connectivity semantics
+~~~~~~~~~~~~~~~~~~~~~~
+
+By default, ``compile()`` enables connected-state deduplication:
+
+* duplicate emitted targets ``x'`` are merged
+* matrix elements are summed across merged entries
+* zero-amplitude components are dropped before padding
+
+Pass ``deduplicate_connected_components=False`` to keep raw per-branch
+connectivity output.
+
 Term metadata
 -------------
 

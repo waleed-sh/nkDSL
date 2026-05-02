@@ -20,6 +20,8 @@ import numpy as np
 import pytest
 
 from tests.helpers.physics_builders import chain_lengths
+from tests.helpers.physics_builders import local_operator_heisenberg
+from tests.helpers.physics_builders import local_operator_ising
 from tests.helpers.physics_builders import symbolic_heisenberg
 from tests.helpers.physics_builders import symbolic_ising
 
@@ -34,7 +36,7 @@ def test_symbolic_ising_dense_matches_netket(length: int):
     J = 1.3
     h = 0.7
 
-    ref = nk.operator.Ising(hi, graph, h=h, J=J)
+    ref = local_operator_ising(hi, graph, J=J, h=h)
     sym = symbolic_ising(hi, graph, J=J, h=h).compile(cache=False)
 
     dense_ref = np.asarray(ref.to_dense())
@@ -50,7 +52,7 @@ def test_symbolic_heisenberg_dense_matches_netket_sign_rule_false(length: int):
 
     J = 1.1
 
-    ref = nk.operator.Heisenberg(hi, graph, J=J, sign_rule=False)
+    ref = local_operator_heisenberg(hi, graph, J=J)
     sym = symbolic_heisenberg(hi, graph, J=J).compile(cache=False)
 
     dense_ref = np.asarray(ref.to_dense())

@@ -246,10 +246,12 @@ model:
 * one iterator visit may produce several emitted branches
 * each ``emit(...)`` call adds one branch
 * conditional chains are supported through ``emit_if/emit_elseif/emit_else``
-* duplicate emitted configurations are not automatically merged
-
-In other words, the connected output is currently a branch multiset, not a
-canonical deduplicated adjacency row.
+* by default, duplicate emitted configurations are merged by target ``x'`` and
+  their matrix elements are summed
+* zero-amplitude components (including invalidated branches) are dropped before
+  final padding
+* this behavior is controlled by ``deduplicate_connected_components`` (default:
+  ``True``)
 
 Useful current limits to remember
 ---------------------------------

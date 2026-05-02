@@ -100,6 +100,11 @@ Compiled objects are normal executable operators. The default target exposes
 bind the generated kernel to a different method name (for example
 ``_get_conn_padded``).
 
+By default, compiled connectivity kernels deduplicate connected states with the
+same ``x'`` target, sum their matrix elements, and drop zero-amplitude entries
+before final padding. This is controlled by
+``deduplicate_connected_components`` (default: ``True``).
+
 .. code-block:: python
 
    xp, mels = compiled.get_conn_padded(x_batch)

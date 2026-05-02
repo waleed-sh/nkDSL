@@ -69,6 +69,7 @@ def _make_context() -> SymbolicCompilationContext:
 def test_options_signature_and_validation():
     opts = SymbolicCompilerOptions.from_mapping(
         backend_preference="jax",
+        deduplicate_connected_components=False,
         enable_fusion=False,
         strict_validation=True,
         cache_enabled=True,
@@ -85,6 +86,7 @@ def test_options_signature_and_validation():
     )
     sig = opts.static_signature()
     assert ("backend_preference", "jax") in sig
+    assert ("deduplicate_connected_components", 0) in sig
     assert ("operator_lowering", DEFAULT_SYMBOLIC_OPERATOR_LOWERING) in sig
     assert ("diagnostics_min_severity", "warning") in sig
     assert opts.debug_flag_map()["dump_ir"] is True

@@ -191,6 +191,7 @@ class SymbolicOperator(AbstractSymbolicOperator):
         *,
         backend: str = "jax",
         operator_lowering: str = "netket_discrete_jax",
+        deduplicate_connected_components: bool = True,
         cache: bool = True,
         compiler: Any = None,
     ) -> Any:  # -> CompiledOperator
@@ -199,6 +200,8 @@ class SymbolicOperator(AbstractSymbolicOperator):
         Args:
             backend: Backend target (currently only ``"jax"`` is supported).
             operator_lowering: Registered operator-lowering target name.
+            deduplicate_connected_components: Whether to merge duplicate
+                connected states and drop zero matrix elements at runtime.
             cache: Whether to cache the compiled artifact in the process-level store.
             compiler: Optional :class:`~nkdsl.compiler.SymbolicCompiler`
                 instance.  When ``None`` the module-level shared compiler is used.
@@ -217,6 +220,7 @@ class SymbolicOperator(AbstractSymbolicOperator):
             options=SymbolicCompilerOptions(
                 backend_preference=backend,
                 operator_lowering=operator_lowering,
+                deduplicate_connected_components=deduplicate_connected_components,
                 cache_enabled=cache,
             )
         )
@@ -227,6 +231,7 @@ class SymbolicOperator(AbstractSymbolicOperator):
             operator_name=self._name_val,
             backend=backend,
             operator_lowering=operator_lowering,
+            deduplicate_connected_components=deduplicate_connected_components,
             cache=cache,
         )
         return c.compile_operator(self)

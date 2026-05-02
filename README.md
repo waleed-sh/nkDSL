@@ -42,8 +42,6 @@ import netket as nk
 from nkdsl import SymbolicDiscreteJaxOperator, site, write
 
 L = 8
-J = 1.0
-h = 0.5
 
 hilbert = nk.hilbert.Spin(s=0.5, N=L)
 graph = nk.graph.Chain(length=L, pbc=True)
@@ -52,12 +50,12 @@ ising = (
     SymbolicDiscreteJaxOperator(hilbert, "ising_tfim", hermitian=True)
     .for_each(("i", "j"), over=graph.edges())
     .emit(
-        matrix_element=1.2 * site("i").value * site("j").value,
+        matrix_element=-1.0 * site("i").value * site("j").value,
     )
     .for_each_site("i")
     .emit(
         write("i", -site("i").value),
-        matrix_element=-0.7,
+        matrix_element=-0.5,
     )
     .compile()
 )

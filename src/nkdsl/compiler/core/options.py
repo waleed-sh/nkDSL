@@ -34,6 +34,8 @@ class SymbolicCompilerOptions:
     Attributes:
         backend_preference: Preferred lowering backend (currently only ``jax``
             is supported, ``auto`` resolves to ``jax``).
+        deduplicate_connected_components: Whether lowered connectivity kernels
+            should merge duplicate connected states and drop zero matrix elements.
         enable_fusion: Whether fusion-planning passes are enabled.
         strict_validation: Whether validation passes fail hard on errors.
         cache_enabled: Whether compiled artifacts are cached in-process.
@@ -54,6 +56,7 @@ class SymbolicCompilerOptions:
     """
 
     backend_preference: str = "auto"
+    deduplicate_connected_components: bool = True
     enable_fusion: bool = True
     strict_validation: bool = True
     cache_enabled: bool = True
@@ -99,6 +102,7 @@ class SymbolicCompilerOptions:
         cls,
         *,
         backend_preference: str = "auto",
+        deduplicate_connected_components: bool = True,
         enable_fusion: bool = True,
         strict_validation: bool = True,
         cache_enabled: bool = True,
@@ -121,6 +125,7 @@ class SymbolicCompilerOptions:
             flags = tuple(sorted(debug_flags.items()))
         return cls(
             backend_preference=backend_preference,
+            deduplicate_connected_components=bool(deduplicate_connected_components),
             enable_fusion=bool(enable_fusion),
             strict_validation=bool(strict_validation),
             cache_enabled=bool(cache_enabled),
@@ -144,6 +149,7 @@ class SymbolicCompilerOptions:
         """Returns a deterministic static signature for cache-key generation."""
         return (
             ("backend_preference", self.backend_preference),
+            ("deduplicate_connected_components", int(self.deduplicate_connected_components)),
             ("enable_fusion", int(self.enable_fusion)),
             ("strict_validation", int(self.strict_validation)),
             ("cache_enabled", int(self.cache_enabled)),
@@ -163,6 +169,7 @@ class SymbolicCompilerOptions:
         return (
             f"SymbolicCompilerOptions("
             f"backend_preference={self.backend_preference!r}, "
+            f"deduplicate_connected_components={self.deduplicate_connected_components}, "
             f"operator_lowering={self.operator_lowering!r}, "
             f"strict_validation={self.strict_validation}, "
             f"diagnostics_enabled={self.diagnostics_enabled}, "

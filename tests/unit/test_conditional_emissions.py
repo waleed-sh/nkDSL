@@ -41,13 +41,13 @@ def test_conditional_emission_if_elseif_else_chain() -> None:
     xp1, m1 = op.get_conn_padded(jnp.asarray([1], dtype=jnp.int32))
     xp2, m2 = op.get_conn_padded(jnp.asarray([2], dtype=jnp.int32))
 
-    np.testing.assert_array_equal(np.asarray(xp0).reshape(-1), np.asarray([1, 2, 3]))
-    np.testing.assert_array_equal(np.asarray(xp1).reshape(-1), np.asarray([1, 2, 3]))
-    np.testing.assert_array_equal(np.asarray(xp2).reshape(-1), np.asarray([1, 2, 3]))
+    np.testing.assert_array_equal(np.asarray(xp0).reshape(-1), np.asarray([1, 0, 0]))
+    np.testing.assert_array_equal(np.asarray(xp1).reshape(-1), np.asarray([2, 0, 0]))
+    np.testing.assert_array_equal(np.asarray(xp2).reshape(-1), np.asarray([3, 0, 0]))
 
     np.testing.assert_allclose(np.asarray(m0), np.asarray([10.0, 0.0, 0.0]))
-    np.testing.assert_allclose(np.asarray(m1), np.asarray([0.0, 20.0, 0.0]))
-    np.testing.assert_allclose(np.asarray(m2), np.asarray([0.0, 0.0, 30.0]))
+    np.testing.assert_allclose(np.asarray(m1), np.asarray([20.0, 0.0, 0.0]))
+    np.testing.assert_allclose(np.asarray(m2), np.asarray([30.0, 0.0, 0.0]))
 
 
 def test_conditional_emission_supports_multiple_elseif_branches() -> None:
@@ -64,7 +64,7 @@ def test_conditional_emission_supports_multiple_elseif_branches() -> None:
     )
 
     _xp, m = op.get_conn_padded(jnp.asarray([2], dtype=jnp.int32))
-    np.testing.assert_allclose(np.asarray(m), np.asarray([0.0, 0.0, 3.0, 0.0]))
+    np.testing.assert_allclose(np.asarray(m), np.asarray([3.0, 0.0, 0.0, 0.0]))
 
 
 def test_emit_elseif_and_emit_else_require_open_conditional_chain() -> None:

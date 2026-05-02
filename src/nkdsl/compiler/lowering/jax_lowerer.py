@@ -37,9 +37,10 @@ evaluates *all* emissions, producing ``E`` branches per row (total ``M * E``).
 
 Branch-multiset note
 ---------------------
-Duplicate ``x'`` values are **not** coalesced. If multiple terms or emissions
-produce the same connected state, they appear as separate rows in the padded
-output.
+By default, duplicate connected states are coalesced by summing matrix
+elements and dropping zero-amplitude entries (including invalidated branches).
+This behavior is controlled by
+``SymbolicCompilerOptions.deduplicate_connected_components``.
 """
 
 from __future__ import annotations
@@ -679,6 +680,48 @@ def _make_kbody_runner(
 #   Compiled operator builder
 
 
+def _coalesce_connected_components(
+    x_primes: Any,
+    matrix_elements: Any,
+    valids: Any,
+) -> tuple[Any, Any]:
+    """
+    Coalesces connected states by target configuration and drops zero amplitudes.
+
+    The output keeps a fixed leading dimension to preserve JAX static-shape
+    constraints used by ``get_conn_padded``.
+    """
+    total_conn = x_primes.shape[0]
+    zero_row = jnp.zeros((x_primes.shape[-1],), dtype=x_primes.dtype)
+
+    unique_xp, first_indices, inverse = jnp.unique(
+        x_primes,
+        axis=0,
+        return_index=True,
+        return_inverse=True,
+        size=total_conn,
+        fill_value=zero_row,
+    )
+    weighted_mels = jnp.where(valids, matrix_elements, jnp.zeros_like(matrix_elements))
+    summed_mels = jax.ops.segment_sum(weighted_mels, inverse, num_segments=total_conn)
+
+    # Keep the first-seen branch order for deterministic debug/repro behavior.
+    order = jnp.argsort(first_indices, stable=True)
+    ordered_xp = unique_xp[order]
+    ordered_mels = summed_mels[order]
+
+    keep = ordered_mels != 0
+    keep_idx = jnp.nonzero(keep, size=total_conn, fill_value=-1)[0]
+    take_idx = jnp.where(keep_idx >= 0, keep_idx, 0)
+
+    compact_xp = ordered_xp[take_idx]
+    compact_mels = ordered_mels[take_idx]
+    keep_valid = keep_idx >= 0
+    compact_xp = jnp.where(keep_valid[:, None], compact_xp, jnp.zeros_like(compact_xp))
+    compact_mels = jnp.where(keep_valid, compact_mels, jnp.zeros_like(compact_mels))
+    return compact_xp, compact_mels
+
+
 def _build_compiled_operator(
     hilbert: Any,
     operator_name: str,
@@ -689,10 +732,12 @@ def _build_compiled_operator(
     *,
     operator_type: type[Any] | None = None,
     connection_method: str = "get_conn_padded",
+    deduplicate_connected_components: bool = True,
 ) -> Any:
     """Composes term runners into a single compiled operator instance."""
     _runners = tuple(term_runners)
     _padded = int(total_padded_size)
+    _dedup = bool(deduplicate_connected_components)
 
     def _single_sample(x: Any) -> tuple:
         all_xp, all_mel, all_valid = [], [], []
@@ -705,7 +750,11 @@ def _build_compiled_operator(
         all_xp = jnp.concatenate(all_xp, axis=0)
         all_mel = jnp.concatenate(all_mel, axis=0)
         all_valid = jnp.concatenate(all_valid, axis=0)
-        all_mel = jnp.where(all_valid, all_mel, jnp.zeros_like(all_mel))
+
+        if _dedup:
+            all_xp, all_mel = _coalesce_connected_components(all_xp, all_mel, all_valid)
+        else:
+            all_mel = jnp.where(all_valid, all_mel, jnp.zeros_like(all_mel))
 
         current = all_xp.shape[0]
         if current < _padded:
@@ -876,6 +925,7 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
             total_padded_size=total_max_conn_size,
             operator_type=lowering_target.operator_type,
             connection_method=lowering_target.connection_method,
+            deduplicate_connected_components=context.options.deduplicate_connected_components,
         )
 
         context.set_selected_lowerer(self._LOWERER_NAME)
@@ -902,6 +952,7 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
                 "term_count": ir.term_count,
                 "total_padded_size": total_max_conn_size,
                 "is_hermitian": ir.is_hermitian,
+                "deduplicate_connected_components": context.options.deduplicate_connected_components,
                 "operator_lowering": lowering_target.name,
                 "target_operator_type": lowering_target.operator_type_qualname,
                 "target_connection_method": lowering_target.connection_method,
@@ -1069,6 +1120,7 @@ def build_compiled_operator(
     total_padded_size: int,
     operator_type: type | None = None,
     connection_method: str = "get_conn_padded",
+    deduplicate_connected_components: bool = True,
 ) -> Any:
     """
     Builds one compiled operator instance from prepared term runners.
@@ -1082,6 +1134,8 @@ def build_compiled_operator(
         total_padded_size: Output padding size for the connectivity kernel.
         operator_type: Optional custom operator class target.
         connection_method: Operator method name to attach connectivity callable to.
+        deduplicate_connected_components: Whether to coalesce duplicate targets
+            and drop zero-amplitude components.
 
     Returns:
         Any: Compiled operator object exposing the requested connection method.
@@ -1095,6 +1149,7 @@ def build_compiled_operator(
         total_padded_size=total_padded_size,
         operator_type=operator_type,
         connection_method=connection_method,
+        deduplicate_connected_components=deduplicate_connected_components,
     )
 
 

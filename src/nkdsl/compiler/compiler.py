@@ -76,6 +76,8 @@ class SymbolicCompiler:
         artifact_store: Artifact cache store.  Defaults to the module-level
             shared :func:`~nkdsl.compiler.defaults.default_symbolic_artifact_store`.
         options: Compiler options.  Defaults to :class:`SymbolicCompilerOptions` with all defaults.
+        deduplicate_connected_components: Convenience override for
+            ``options.deduplicate_connected_components``.
         operator_lowering: Convenience override for ``options.operator_lowering``.
     """
 
@@ -89,6 +91,7 @@ class SymbolicCompiler:
         options: SymbolicCompilerOptions | None = None,
         backend_preference: str | None = None,
         cache_enabled: bool | None = None,
+        deduplicate_connected_components: bool | None = None,
         operator_lowering: str | None = None,
     ) -> None:
         from nkdsl.compiler.cache.store import InMemorySymbolicArtifactStore
@@ -115,6 +118,7 @@ class SymbolicCompiler:
         if (
             backend_preference is not None
             or cache_enabled is not None
+            or deduplicate_connected_components is not None
             or operator_lowering is not None
         ):
             resolved_options = SymbolicCompilerOptions(
@@ -122,6 +126,11 @@ class SymbolicCompiler:
                     backend_preference
                     if backend_preference is not None
                     else resolved_options.backend_preference
+                ),
+                deduplicate_connected_components=(
+                    deduplicate_connected_components
+                    if deduplicate_connected_components is not None
+                    else resolved_options.deduplicate_connected_components
                 ),
                 enable_fusion=resolved_options.enable_fusion,
                 strict_validation=resolved_options.strict_validation,

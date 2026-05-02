@@ -93,8 +93,8 @@ def test_custom_iterator_clause_dynamic_method_executes():
     x = jnp.asarray([3, 4, 5, 6], dtype=jnp.int32)
     xp, mels = op.get_conn_padded(x)
 
-    np.testing.assert_array_equal(np.asarray(xp), np.asarray([[3, 4, 5, 6], [3, 4, 5, 6]]))
-    np.testing.assert_allclose(np.asarray(mels), np.asarray([3.0, 5.0]))
+    np.testing.assert_array_equal(np.asarray(xp), np.asarray([[3, 4, 5, 6], [0, 0, 0, 0]]))
+    np.testing.assert_allclose(np.asarray(mels), np.asarray([8.0, 0.0]))
     assert op.max_conn_size == 2
 
 
@@ -120,7 +120,7 @@ def test_custom_predicate_clause_composes_with_where():
 
     x = jnp.asarray([0, 1, 2, 3], dtype=jnp.int32)
     _xp, mels = op.get_conn_padded(x)
-    np.testing.assert_allclose(np.asarray(mels), np.asarray([0.0, 1.0, 1.0, 0.0]))
+    np.testing.assert_allclose(np.asarray(mels), np.asarray([2.0, 0.0, 0.0, 0.0]))
 
 
 def test_register_decorator_accepts_iterator_predicate_and_emission_clause_classes():

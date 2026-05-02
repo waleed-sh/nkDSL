@@ -67,7 +67,7 @@ def register(
     replace: bool = False,
 ) -> type[Any] | Callable[[type[Any]], type[Any]]:
     """
-    Registers either an iterator clause or predicate clause class.
+    Registers either an iterator clause, predicate clause or an emission clause class.
 
     Args:
         clause_cls: Clause class to register. When ``None``, returns a decorator.

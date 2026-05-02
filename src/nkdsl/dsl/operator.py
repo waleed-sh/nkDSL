@@ -89,11 +89,14 @@ output branches (``EmissionSpec`` entries) from a **single** iterator
 evaluation. This avoids the overhead of iterating over sites twice and
 keeps the semantic unit cohesive.
 
-Branch-multiset note
---------------------
-If two terms (or two emissions within one term) produce the same ``x'``,
-both entries appear in the padded output with their own matrix elements.
-The output is a branch **multiset**, not a canonical deduplicated row.
+Connected-state dedup note
+--------------------------
+By default, if two terms (or two emissions within one term) produce the same
+``x'``, those entries are merged and their matrix elements are summed. Final
+zero-amplitude components are dropped before padding.
+
+Set ``deduplicate_connected_components=False`` during ``.compile(...)`` to keep
+raw per-branch connectivity output.
 """
 
 from __future__ import annotations
@@ -1019,7 +1022,7 @@ class SymbolicDiscreteJaxOperator:
         without splitting into two separate terms.
 
         Matrix-element semantics
-        ----------------------------
+        --------------------
         The matrix-element expression is evaluated in the *source* configuration
         environment ``(x, site_labels)``. There is no access to ``x'`` inside
         matrix-element expressions: ``<x|O|x'>`` is computed from ``x``, not ``x'``.
@@ -1204,6 +1207,7 @@ class SymbolicDiscreteJaxOperator:
         *,
         backend: str = "jax",
         operator_lowering: str = "netket_discrete_jax",
+        deduplicate_connected_components: bool = True,
         cache: bool = True,
     ) -> Any:
         """
@@ -1219,11 +1223,13 @@ class SymbolicDiscreteJaxOperator:
             operator_name=self._name,
             backend=backend,
             operator_lowering=operator_lowering,
+            deduplicate_connected_components=deduplicate_connected_components,
             cache=cache,
         )
         return self.build().compile(
             backend=backend,
             operator_lowering=operator_lowering,
+            deduplicate_connected_components=deduplicate_connected_components,
             cache=cache,
         )
 

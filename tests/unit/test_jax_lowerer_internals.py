@@ -402,3 +402,49 @@ def test_build_compiled_operator_with_custom_connection_method():
     xp, m = op.get_conn_padded(x)
     np.testing.assert_array_equal(np.asarray(xp), np.asarray([[1, 0]], dtype=np.int32))
     np.testing.assert_allclose(np.asarray(m), np.asarray([2.0], dtype=np.float32))
+
+
+def test_connected_components_deduplicate_and_drop_zero_by_default():
+    hi = nk.hilbert.Fock(n_max=3, N=1)
+    op = (
+        nkdsl.SymbolicDiscreteJaxOperator(hi, "dedup-default")
+        .globally()
+        .emit(nkdsl.write(0, 1), matrix_element=1.5)
+        .emit(nkdsl.write(0, 1), matrix_element=-0.5)
+        .emit(nkdsl.write(0, 2), matrix_element=0.0)
+        .emit(nkdsl.shift(0, +1).invalidate(reason="invalid"), matrix_element=4.0)
+        .build()
+        .compile(cache=False)
+    )
+
+    x = jnp.asarray([0], dtype=jnp.int32)
+    xp, mels = op.get_conn_padded(x)
+    np.testing.assert_array_equal(np.asarray(xp), np.asarray([[1], [0], [0], [0]], dtype=np.int32))
+    np.testing.assert_allclose(np.asarray(mels), np.asarray([1.0, 0.0, 0.0, 0.0]))
+
+    xp_conn, mel_conn = op.get_conn(x)
+    np.testing.assert_array_equal(np.asarray(xp_conn), np.asarray([[1]], dtype=np.int32))
+    np.testing.assert_allclose(np.asarray(mel_conn), np.asarray([1.0]))
+
+
+def test_connected_components_deduplication_can_be_disabled():
+    hi = nk.hilbert.Fock(n_max=3, N=1)
+    op = (
+        nkdsl.SymbolicDiscreteJaxOperator(hi, "dedup-off")
+        .globally()
+        .emit(nkdsl.write(0, 1), matrix_element=1.5)
+        .emit(nkdsl.write(0, 1), matrix_element=-0.5)
+        .emit(nkdsl.write(0, 2), matrix_element=0.0)
+        .emit(nkdsl.shift(0, +1).invalidate(reason="invalid"), matrix_element=4.0)
+        .build()
+        .compile(cache=False, deduplicate_connected_components=False)
+    )
+
+    x = jnp.asarray([0], dtype=jnp.int32)
+    xp, mels = op.get_conn_padded(x)
+    np.testing.assert_array_equal(np.asarray(xp), np.asarray([[1], [1], [2], [1]], dtype=np.int32))
+    np.testing.assert_allclose(np.asarray(mels), np.asarray([1.5, -0.5, 0.0, 0.0]))
+
+    xp_conn, mel_conn = op.get_conn(x)
+    np.testing.assert_array_equal(np.asarray(xp_conn), np.asarray([[1], [1]], dtype=np.int32))
+    np.testing.assert_allclose(np.asarray(mel_conn), np.asarray([1.5, -0.5]))

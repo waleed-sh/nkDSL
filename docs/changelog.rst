@@ -36,6 +36,11 @@ Improvements
   symbolic and compiled operators by treating numeric zero as the additive
   identity in reverse-add dispatch (``0 + op -> op``).
 
+* Lowered connectivity kernels now deduplicate connected states by default,
+  summing matrix elements for duplicate ``x'`` targets and dropping
+  zero-amplitude components (including invalidated branches). This behavior is
+  controlled by ``deduplicate_connected_components`` and defaults to ``True``.
+
 Backwards incompatible changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -66,6 +71,9 @@ Documentation
 
 * Extended linting docs with the new ``NKDSL-E003`` message and guidance for
   guarding divisions over runtime state values.
+
+* Updated emission/connectivity semantics docs to describe default connected
+  component deduplication and zero-amplitude pruning.
 
 
 

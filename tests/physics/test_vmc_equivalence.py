@@ -20,6 +20,8 @@ import numpy as np
 import pytest
 
 from tests.helpers.physics_builders import fullsum_vmc_energy_trace
+from tests.helpers.physics_builders import local_operator_heisenberg
+from tests.helpers.physics_builders import local_operator_ising
 from tests.helpers.physics_builders import max_abs_tree_diff
 from tests.helpers.physics_builders import symbolic_heisenberg
 from tests.helpers.physics_builders import symbolic_ising
@@ -33,12 +35,12 @@ pytestmark = [pytest.mark.physics, pytest.mark.slow]
         (
             "ising",
             lambda hi, g: symbolic_ising(hi, g, J=1.2, h=0.7).compile(cache=False),
-            lambda hi, g: nk.operator.Ising(hi, g, h=0.7, J=1.2),
+            lambda hi, g: local_operator_ising(hi, g, h=0.7, J=1.2),
         ),
         (
             "heisenberg",
             lambda hi, g: symbolic_heisenberg(hi, g, J=1.0).compile(cache=False),
-            lambda hi, g: nk.operator.Heisenberg(hi, g, J=1.0, sign_rule=False),
+            lambda hi, g: local_operator_heisenberg(hi, g, J=1.0),
         ),
     ),
 )

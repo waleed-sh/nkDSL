@@ -19,6 +19,7 @@ import copy
 from collections.abc import Sequence
 
 import netket as nk
+import numpy as np
 
 import nkdsl
 
@@ -54,6 +55,22 @@ def symbolic_ising(
     )
 
 
+def local_operator_ising(
+    hilbert: nk.hilbert.Spin,
+    graph: nk.graph.AbstractGraph,
+    *,
+    J: float,
+    h: float,
+):
+    """Builds the Ising Hamiltonian from native NetKet local operators."""
+    op = nk.operator.LocalOperator(hilbert, dtype=float)
+    for i, j in graph_edges(graph):
+        op += J * (nk.operator.spin.sigmaz(hilbert, i) @ nk.operator.spin.sigmaz(hilbert, j))
+    for i in range(hilbert.size):
+        op += -h * nk.operator.spin.sigmax(hilbert, i)
+    return op
+
+
 def symbolic_heisenberg(
     hilbert: nk.hilbert.Spin,
     graph: nk.graph.AbstractGraph,
@@ -77,6 +94,25 @@ def symbolic_heisenberg(
     )
 
 
+def local_operator_heisenberg(
+    hilbert: nk.hilbert.Spin,
+    graph: nk.graph.AbstractGraph,
+    *,
+    J: float,
+):
+    """Builds the Heisenberg Hamiltonian from native NetKet local operators."""
+    op = nk.operator.LocalOperator(hilbert, dtype=complex)
+    for i, j in graph_edges(graph):
+        sx_i = nk.operator.spin.sigmax(hilbert, i)
+        sx_j = nk.operator.spin.sigmax(hilbert, j)
+        sy_i = nk.operator.spin.sigmay(hilbert, i)
+        sy_j = nk.operator.spin.sigmay(hilbert, j)
+        sz_i = nk.operator.spin.sigmaz(hilbert, i)
+        sz_j = nk.operator.spin.sigmaz(hilbert, j)
+        op += J * (sx_i @ sx_j + sy_i @ sy_j + sz_i @ sz_j)
+    return op
+
+
 def fullsum_vmc_energy_trace(
     *,
     operator,
@@ -94,7 +130,7 @@ def fullsum_vmc_energy_trace(
     energies: list[float] = []
     for _ in range(n_iter):
         driver.advance(1)
-        energies.append(float(driver.energy.mean))
+        energies.append(float(np.real(np.asarray(driver.energy.mean))))
 
     return energies, state
 

@@ -63,13 +63,15 @@ This allows matrix elements to depend on either the source state, the emitted
 state, or both. In addition, ``wrap_mod(expr)`` applies the same Hilbert-aware
 modulo-wrap semantics used by ``shift_mod(...)``.
 
-Branch-multiset semantics
---------------------------
-The padded connected-states representation returned by ``get_conn_padded`` is a
-**branch multiset**, not a deduplicated adjacency row. If two terms (or two
-emissions within one term) produce the same ``x'``, both appear as separate
-entries with separate matrix elements.  Callers that accumulate matrix elements
-must sum over duplicate ``x'`` entries explicitly.
+Connected-state dedup semantics
+-------------------------------
+The padded connected-states representation returned by ``get_conn_padded`` is
+deduplicated by default. If two terms (or two emissions within one term)
+produce the same ``x'``, they are merged and their matrix elements are summed.
+Zero-amplitude components are dropped before padding.
+
+Set ``deduplicate_connected_components=False`` during ``.compile(...)`` to keep
+raw per-branch output when needed.
 """
 
 from __future__ import annotations
