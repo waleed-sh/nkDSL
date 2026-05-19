@@ -29,6 +29,10 @@ New features
   ``wrap_mod()``, and ``pow(...)``), while preserving existing
   ``AmplitudeExpr.<helper>(...)`` usage.
 
+* Added ``hop(src, dst, amount=1)`` as a small occupation-transfer update helper,
+  equivalent to ``shift(src, -amount).shift(dst, +amount)``.
+
+
 Improvements
 ~~~~~~~~~~~~
 

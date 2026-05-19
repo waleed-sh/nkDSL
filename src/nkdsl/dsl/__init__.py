@@ -31,6 +31,7 @@ from .predicates import register_predicate_clause
 
 from .rewrite import Update
 from .rewrite import affine
+from .rewrite import hop
 from .rewrite import identity
 from .rewrite import permute
 from .rewrite import scatter
@@ -50,6 +51,7 @@ __all__ = [
     "SymbolicDiscreteJaxOperator",
     "Update",
     "affine",
+    "hop",
     "identity",
     "permute",
     "scatter",

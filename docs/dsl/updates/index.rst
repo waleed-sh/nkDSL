@@ -11,6 +11,7 @@ module-level helpers.
 
    identity
    shift
+   hop
    shift_mod
    write
    swap_permute

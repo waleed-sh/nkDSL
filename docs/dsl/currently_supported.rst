@@ -213,6 +213,10 @@ The currently implemented update primitives are:
 ``shift(site, delta)``
    set ``x'[i] = x[i] + delta``
 
+``hop(src, dst, amount=1)``
+   transfer occupation from ``src`` to ``dst``, equivalent to
+   ``shift(src, -amount).shift(dst, +amount)``
+
 ``shift_mod(site, delta)``
    Hilbert-aware wrapped shift using the local basis metadata
 

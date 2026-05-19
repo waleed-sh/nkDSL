@@ -19,16 +19,16 @@ Symbolic operator subsystem for NetKet.
 Typical workflow::
 
     from nkdsl import SymbolicDiscreteJaxOperator
-    from nkdsl.dsl import site, shift, swap
+    from nkdsl.dsl import site, hop
 
-    hop = (
+    hopping_op = (
         SymbolicDiscreteJaxOperator(hi, "hopping")
         .for_each_pair("i", "j")
         .where(site("i") > 0)
-        .emit(shift("i", -1).shift("j", +1), matrix_element=1.0)
+        .emit(hop("i", "j"), matrix_element=1.0)
         .build()
     )
-    compiled = hop.compile()
+    compiled = hopping_op.compile()
     xp, mels = compiled.get_conn_padded(x_batch)
 """
 
@@ -59,6 +59,7 @@ from nkdsl.dsl import shift
 from nkdsl.dsl import shift_mod
 from nkdsl.dsl import site
 from nkdsl.dsl import emitted
+from nkdsl.dsl import hop
 from nkdsl.dsl import source_index
 from nkdsl.dsl import swap
 from nkdsl.dsl import symbol
@@ -143,6 +144,7 @@ __all__ = [
     "Update",
     "shift",
     "shift_mod",
+    "hop",
     "write",
     "swap",
     "permute",

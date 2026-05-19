@@ -97,6 +97,33 @@ def test_for_each_site_where_shift():
     assert op.max_conn_size == 3
 
 
+def test_hop_update_transfers_occupation_between_sites():
+    hi = nk.hilbert.Fock(n_max=4, N=2)
+    op = (
+        nkdsl.SymbolicDiscreteJaxOperator(hi, "hop")
+        .globally()
+        .emit(nkdsl.hop(0, 1), matrix_element=1.0)
+        .emit(nkdsl.hop(1, 0, amount=2), matrix_element=2.0)
+        .build()
+        .compile()
+    )
+
+    x = jnp.asarray([3, 1], dtype=jnp.int32)
+    xp, mels = op.get_conn_padded(x)
+
+    expected_xp = np.asarray(
+        [
+            [2, 2],
+            [5, -1],
+        ],
+        dtype=np.int32,
+    )
+    expected_mels = np.asarray([1.0, 2.0])
+
+    np.testing.assert_array_equal(np.asarray(xp), expected_xp)
+    np.testing.assert_allclose(np.asarray(mels), expected_mels)
+
+
 def test_multi_emission_order_and_values():
     hi = nk.hilbert.Fock(n_max=3, N=2)
     op = (

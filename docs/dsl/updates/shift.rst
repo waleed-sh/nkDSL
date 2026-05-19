@@ -10,7 +10,8 @@ Example:
 
 .. code-block:: python
 
-   hop = shift("i", -1).shift("j", +1)
+   hopping_update = shift("i", -1).shift("j", +1)
 
-Because updates are immutable and chainable, this is the natural way to express a
-hopping move.
+Because updates are immutable and chainable, paired shifts are a natural way to
+express a hopping move. For the common occupation-transfer case, prefer the
+equivalent :doc:`hop` helper.

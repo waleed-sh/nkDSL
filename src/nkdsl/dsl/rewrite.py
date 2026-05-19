@@ -20,19 +20,20 @@ The :class:`Update` class is designed for ergonomic construction of
 site-update programs: every method is chainable and returns a *new*
 immutable :class:`Update` instance.
 
-Module-level factory functions (``shift``, ``write``, ``swap``, ``permute``,
+Module-level factory functions (``shift``, ``hop``, ``write``, ``swap``, ``permute``,
 ``affine``, ``scatter``, ``identity``) serve as zero-boilerplate entry points,
 there is no need to first construct an empty ``Update()`` before chaining.
 
 Examples::
 
-    from nkdsl.dsl import shift, write, swap, permute, scatter
+    from nkdsl.dsl import shift, hop, write, swap, permute, scatter
 
     # Single operation, direct factory call
     update = shift("i", +1)
 
     # Compound update, chain freely
     update = shift("i", -1).shift("j", +1)  # hopping
+    update = hop("i", "j")  # same hopping move
     update = swap("i", "j").write("k", 0)  # swap then zero
     update = permute("i", "j", "k")  # cyclic rotation
     update = affine("i", scale=2, bias=-1)  # x[i] = 2*x[i] - 1
@@ -203,6 +204,31 @@ class Update:
                 },
             )
         )
+
+    def hop(
+        self,
+        src: str | SiteSelector | int | AmplitudeExpr,
+        dst: str | SiteSelector | int | AmplitudeExpr,
+        *,
+        amount: Any = 1,
+    ) -> "Update":
+        """
+        Appends an occupation transfer from *src* to *dst*.
+
+        ``hop(src, dst, amount=a)`` is equivalent to
+        ``shift(src, -a).shift(dst, +a)``. It is a readability helper for
+        off-diagonal hopping terms in occupation-number models.
+
+        Args:
+            src: Source site to lower.
+            dst: Destination site to raise.
+            amount: Transferred amount, numeric or amplitude expression.
+
+        Returns:
+            New ``Update`` with the two shift operations appended.
+        """
+        amount_expr = coerce_amplitude_expr(amount)
+        return self.shift(src, -amount_expr).shift(dst, amount_expr)
 
     def write(
         self,
@@ -470,6 +496,26 @@ def shift_mod(
     return _IDENTITY.shift_mod(site_ref, delta)
 
 
+def hop(
+    src: str | SiteSelector | int | AmplitudeExpr,
+    dst: str | SiteSelector | int | AmplitudeExpr,
+    *,
+    amount: Any = 1,
+) -> Update:
+    """
+    Returns an ``Update`` transferring occupation from *src* to *dst*.
+
+    ``hop(src, dst, amount=a)`` is shorthand for
+    ``shift(src, -a).shift(dst, +a)``.
+
+    Example::
+
+        hop("i", "j")  # x'[i] = x[i] - 1, x'[j] = x[j] + 1
+        hop("i", "j", amount=2)  # transfer two quanta
+    """
+    return _IDENTITY.hop(src, dst, amount=amount)
+
+
 def write(
     site_ref: str | SiteSelector | int | AmplitudeExpr,
     value: Any,
@@ -560,6 +606,7 @@ def identity() -> Update:
 __all__ = [
     "Update",
     "affine",
+    "hop",
     "identity",
     "permute",
     "scatter",
