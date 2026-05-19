@@ -73,5 +73,6 @@ The extracted package already includes:
   fusion planning, caching, and JAX lowering
 * compiled operators that expose ``get_conn_padded``
 
-It is still an early package. That means the public surface is usable, while some
-internals and naming may continue to evolve.
+As a beta package, ``nkDSL`` has a usable core workflow and public surface for
+real projects. Some advanced internals and extension APIs may continue to evolve
+before the stable release.

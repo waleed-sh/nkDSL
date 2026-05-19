@@ -5,11 +5,11 @@ nkDSL
 ``neuraLQX`` and makes it usable on its own. The core workflow is to describe a discrete
 operator in a compact, readable [D]eclarative [S]ymbolic [L]anguage (DSL) and compile it into a NetKet-compatible JAX operator.
 
-.. warning::
+.. note::
 
-   ``nkDSL`` is an early-stage project and should be considered experimental.
-   The public API may change without notice, parts of the DSL are still evolving,
-   and some features may be incomplete or insufficiently tested.
+   ``nkDSL`` is currently in beta. The core DSL and compiler workflow are ready
+   for broader testing, while some advanced APIs may still evolve before a fully
+   stable release.
 
 The package is built around a simple four-step mental model:
 

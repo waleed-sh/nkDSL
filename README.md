@@ -16,10 +16,10 @@
 `nkDSL` is a standalone symbolic operator DSL which provides a compact, declarative way to define discrete operators in 
 [NetKet](https://github.com/netket/netket) and compile them into executable JAX-backed operator kernels.
 
-> [!WARNING]
-> `nkDSL` is currently **experimental (alpha)** and **not a production release**.
-> We are testing this idea, still testing and refining core behavior, interfaces, and performance.
-> Expect API changes between releases while the package matures.
+> [!NOTE]
+> `nkDSL` is currently in **beta**.
+> The core DSL and compiler workflow are ready for broader testing, while some
+> advanced APIs may still evolve before a fully stable release.
 
 ## What it does
 
