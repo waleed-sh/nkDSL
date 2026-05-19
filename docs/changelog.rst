@@ -1,8 +1,8 @@
 Changelog
 =========
 
-Unreleased
-------------
+nkDSL v0.1.2
+--------------
 
 New features
 ~~~~~~~~~~~~
