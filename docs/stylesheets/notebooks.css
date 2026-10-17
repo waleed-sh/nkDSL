@@ -1,0 +1,100 @@
+/* Match the reference theme without displaying Material's default logo. */
+.md-header__button.md-logo,
+.md-nav__title .md-logo { display: none; }
+
+.notebook-download { color: var(--md-default-fg-color--light); font-size: 0.7rem; }
+.notebook-download span { font-size: 0.64rem; }
+
+/* Notebook output keeps the same type, colors and column width as prose pages. */
+.md-typeset .jupyter-wrapper .jp-Notebook {
+  padding: 0;
+  background: transparent;
+  color: var(--md-default-fg-color);
+  --jp-content-font-family: var(--md-text-font-family);
+  --jp-content-font-size1: 0.82rem;
+  --jp-content-line-height: 1.44;
+  --jp-code-font-family: var(--md-code-font-family);
+  --jp-code-font-size: 0.68rem;
+  --jp-cell-editor-background: var(--md-code-bg-color);
+  --jp-cell-editor-border-color: var(--md-default-fg-color--lightest);
+  --jp-content-font-color1: var(--md-default-fg-color);
+  --jp-ui-font-color1: var(--md-default-fg-color);
+  --jp-layout-color0: var(--md-default-bg-color);
+  --jp-layout-color1: var(--md-default-bg-color);
+  --jp-mirror-editor-variable-color: var(--md-code-fg-color);
+  --jp-mirror-editor-comment-color: var(--md-code-hl-comment-color);
+  --jp-mirror-editor-keyword-color: var(--md-code-hl-keyword-color);
+  --jp-mirror-editor-operator-color: var(--md-code-hl-operator-color);
+  --jp-mirror-editor-number-color: var(--md-code-hl-number-color);
+  --jp-mirror-editor-string-color: var(--md-code-hl-string-color);
+  --jp-mirror-editor-builtin-color: var(--md-code-hl-name-color);
+  --jp-mirror-editor-def-color: var(--md-code-hl-function-color);
+}
+.md-typeset .jupyter-wrapper .jp-Cell { padding: 0; margin: 1rem 0; }
+.md-typeset .jupyter-wrapper .jp-Cell-inputWrapper { overflow: visible; }
+.md-typeset .jupyter-wrapper .jp-InputArea-editor { border-radius: 4px; }
+.md-typeset .jupyter-wrapper .jp-InputPrompt,
+.md-typeset .jupyter-wrapper .jp-OutputPrompt { display: none; }
+.md-typeset .jupyter-wrapper,
+.md-typeset .jupyter-wrapper .jp-Notebook,
+.md-typeset .jupyter-wrapper .jp-Cell,
+.md-typeset .jupyter-wrapper .jp-Cell-outputWrapper,
+.md-typeset .jupyter-wrapper .jp-OutputArea,
+.md-typeset .jupyter-wrapper .jp-OutputArea-child {
+  min-width: 0;
+  max-width: 100%;
+}
+.md-typeset .jupyter-wrapper .jp-OutputArea-output {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  flex-basis: 0;
+}
+/* nbconvert wraps output at arbitrary characters by default. Preserve columns
+   in arrays, IR dumps and Rich panels, with scrolling on narrow screens. */
+.md-typeset .jupyter-wrapper .jp-OutputArea-output pre {
+  white-space: pre;
+  word-break: normal;
+  word-wrap: normal;
+  overflow-wrap: normal;
+  font-family: var(--md-code-font-family);
+  font-size: 0.68rem;
+  line-height: 1.36;
+  overflow-x: auto;
+  max-width: 100%;
+}
+.md-typeset .jupyter-wrapper .jp-OutputArea-output img,
+.md-typeset .jupyter-wrapper .jp-OutputArea-output svg {
+  max-width: 100%;
+  height: auto;
+}
+.md-typeset .jupyter-wrapper .jp-RenderedHTMLCommon { padding: 0; color: inherit; font-size: 0.82rem; line-height: 1.44; }
+.md-typeset .jupyter-wrapper .jp-RenderedHTMLCommon h1,
+.md-typeset .jupyter-wrapper .jp-RenderedHTMLCommon h2,
+.md-typeset .jupyter-wrapper .jp-RenderedHTMLCommon h3 { color: inherit; font-family: inherit; font-weight: 680; }
+.md-typeset .jupyter-wrapper .jp-RenderedHTMLCommon h1 { font-size: 1.36rem; }
+.md-typeset .jupyter-wrapper .jp-RenderedHTMLCommon h2 { font-size: 1rem; }
+.md-typeset .jupyter-wrapper .jp-RenderedHTMLCommon h3 { font-size: 0.84rem; }
+.md-typeset .jupyter-wrapper .jp-RenderedText pre,
+.md-typeset .jupyter-wrapper .jp-InputArea pre { color: var(--md-code-fg-color); font-size: 0.68rem; line-height: 1.36; }
+.md-typeset .jupyter-wrapper .jp-InputArea .highlight,
+.md-typeset .jupyter-wrapper .jp-InputArea .highlight-ipynb { position: relative; }
+.md-typeset .jupyter-wrapper .jp-InputArea pre { padding-right: 3rem; }
+.notebook-copy {
+  position: absolute;
+  top: 0.35rem;
+  right: 0.35rem;
+  padding: 0.12rem 0.35rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 3px;
+  color: var(--md-default-fg-color--light);
+  background: var(--md-code-bg-color);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.6rem;
+}
+.notebook-copy:hover, .notebook-copy:focus-visible { color: var(--md-accent-fg-color); }
+.notebook-copy-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.rtd-version { margin-left: 0.6rem; font-size: 0.6rem; white-space: nowrap; }
+.rtd-version select { color: inherit; background: var(--md-default-bg-color); border-radius: 3px; padding: 0.15rem; }
+.doc-heading code { overflow-wrap: anywhere; }

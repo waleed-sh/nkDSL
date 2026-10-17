@@ -17,6 +17,10 @@ ENV/
 .idea/
 
 docs/_build/
+site/
+.venv-docs/
+.cache/mkdocs-jupyter/
+**/.ipynb_checkpoints/
 docs/api/generated
 
 .DS_Store

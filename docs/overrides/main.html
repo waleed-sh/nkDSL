@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block site_meta %}
+  {{ super() }}
+  <meta name="readthedocs-addons-api-version" content="1">
+{% endblock %}
+
+{% block content %}
+  {% if page.nb_url %}
+    <p class="notebook-download">
+      <a href="{{ page.file.src_uri.split('/')[-1] | e }}" download>Download this notebook</a>
+      <span> · Saved outputs. Run the notebook to reproduce them.</span>
+    </p>
+  {% endif %}
+  {{ super() }}
+{% endblock %}

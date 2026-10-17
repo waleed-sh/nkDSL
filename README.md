@@ -1,20 +1,15 @@
-<p align="center">
-    <img src="https://raw.githubusercontent.com/waleed-sh/nkDSL/main/docs/_static/nkDSL.png" width="350">
-</p>
-
 <div align="center">
 
 [![PyPI](https://img.shields.io/pypi/v/nkDSL.svg)](https://pypi.org/project/nkDSL/)
 [![License](https://img.shields.io/github/license/waleed-sh/nkDSL.svg)](https://github.com/waleed-sh/nkDSL/blob/main/LICENSE)
 [![Documentation Status](https://readthedocs.org/projects/nkdsl/badge/?version=latest)](https://nkdsl.readthedocs.io/en/latest/?badge=latest)
-[![codecov](https://codecov.io/github/waleed-sh/nkDSL/graph/badge.svg?token=MPNEEEISNI)](https://codecov.io/github/waleed-sh/nkDSL)
 
 </div>
 
 # nkDSL
 
-`nkDSL` is a standalone symbolic operator DSL which provides a compact, declarative way to define discrete operators in 
-[NetKet](https://github.com/netket/netket) and compile them into executable JAX-backed operator kernels.
+`nkDSL` is a standalone extraction of the symbolic operator DSL from [neuraLQX](https://www.github.com/waleed-sh/neuraLQX).
+It provides a compact, declarative way to define discrete operators in [NetKet](https://github.com/netket/netket) and compile them into executable JAX-backed operator kernels.
 
 > [!NOTE]
 > `nkDSL` is currently in **beta**.
@@ -42,6 +37,8 @@ import netket as nk
 from nkdsl import SymbolicDiscreteJaxOperator, site, write
 
 L = 8
+J = 1.0
+h = 0.5
 
 hilbert = nk.hilbert.Spin(s=0.5, N=L)
 graph = nk.graph.Chain(length=L, pbc=True)
@@ -50,12 +47,12 @@ ising = (
     SymbolicDiscreteJaxOperator(hilbert, "ising_tfim", hermitian=True)
     .for_each(("i", "j"), over=graph.edges())
     .emit(
-        matrix_element=-1.0 * site("i").value * site("j").value,
+        matrix_element=1.2 * site("i").value * site("j").value,
     )
     .for_each_site("i")
     .emit(
         write("i", -site("i").value),
-        matrix_element=-0.5,
+        matrix_element=-0.7,
     )
     .compile()
 )
@@ -74,8 +71,22 @@ python -m pip install nkdsl
 
 ## Status
 
-`nkdsl` is currently a small, focused package for the recent DSL operator work developed in neuraLQX. Right now the goal is clarity and usability rather than a broad, frozen API surface.
+`nkdsl` is a small, focused beta package for the symbolic operator work developed in neuraLQX. The goal is a clear, usable DSL with a stable core workflow and room for advanced APIs to continue maturing.
 
 ## License
 
 This project is licensed under Apache License 2.0. See [LICENSE](LICENSE) for the full text.
+
+## Documentation
+
+The [documentation](https://nkdsl.readthedocs.io/en/latest/) uses MkDocs and
+Material. To preview it locally:
+
+```bash
+python -m pip install -r docs/requirements.txt
+python -m mkdocs serve
+```
+
+Notebook pages display verified, saved outputs and do not execute during site
+builds. See the [documentation guide](docs/contributing/documentation.md) for
+refreshing notebooks and running the checks used by CI and Read the Docs.

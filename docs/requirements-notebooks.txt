@@ -1,0 +1,11 @@
+# Notebook execution is a separate maintenance step, never part of an RTD build.
+-r requirements.txt
+-e .
+netket==3.22.4
+jax==0.10.2
+jaxlib==0.10.2
+numpy==2.5.4
+flax==0.12.8
+ipykernel==7.4.0
+nbclient==0.11.0
+matplotlib==3.11.2

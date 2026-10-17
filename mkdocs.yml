@@ -1,0 +1,199 @@
+site_name: nkDSL
+site_description: Define discrete quantum operators symbolically and compile them for NetKet and JAX.
+site_url: https://nkdsl.readthedocs.io/en/latest/
+repo_url: https://github.com/waleed-sh/nkDSL
+repo_name: waleed-sh/nkDSL
+edit_uri: edit/main/docs/
+copyright: Copyright © 2026 The nkDSL Authors
+use_directory_urls: false
+strict: true
+
+theme:
+  name: material
+  custom_dir: docs/overrides
+  language: en
+  font: false
+  favicon: assets/favicon.svg
+  palette:
+    - scheme: default
+      primary: white
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - scheme: slate
+      primary: black
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.indexes
+    - navigation.top
+    - navigation.footer
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+
+plugins:
+  - search
+  - gen-files:
+      scripts:
+        - scripts/docs_api.py
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            allow_inspection: false
+            docstring_style: google
+            docstring_section_style: table
+            extensions:
+              - scripts/docs_docstrings.py:MarkdownDocstrings
+            members_order: source
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: true
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: false
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            inherited_members: false
+            merge_init_into_class: true
+  - mkdocs-jupyter:
+      execute: false
+      include_source: true
+      show_input: true
+      ignore_h1_titles: true
+      theme: light
+      include_requirejs: false
+
+hooks:
+  - scripts/docs_hooks.py
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.arithmatex:
+      generic: true
+
+extra_css:
+  - stylesheets/extra.css
+  - stylesheets/notebooks.css
+extra_javascript:
+  - javascripts/mathjax.js
+  - javascripts/notebook-copy.js
+  - javascripts/readthedocs.js
+  - https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-mml-chtml.js
+
+exclude_docs: |
+  _build/
+  overrides/
+  requirements*.txt
+  **/.ipynb_checkpoints/
+  **/__pycache__/
+
+validation:
+  nav:
+    omitted_files: info
+  links:
+    not_found: warn
+    anchors: warn
+    unrecognized_links: warn
+
+nav:
+  - Home: index.md
+  - Getting started:
+      - Overview: overview.md
+      - Quick start: quickstart.md
+      - How compilation works: getting_started/compilation.md
+      - Supported features: dsl/currently_supported.md
+  - The DSL:
+      - dsl/index.md
+      - Symbolic operators: dsl/symbolic_operator.md
+      - Chaining terms and updates: dsl/chaining.md
+      - Selectors and expressions: dsl/selectors_and_expressions.md
+      - Iterators:
+          - dsl/iterators/index.md
+          - All sites: dsl/iterators/for_each_site.md
+          - All pairs: dsl/iterators/for_each_pair.md
+          - Distinct pairs: dsl/iterators/for_each_distinct_pair.md
+          - Static tuples: dsl/iterators/for_each_kbody.md
+          - Global terms: dsl/iterators/globally.md
+      - Conditions:
+          - dsl/conditions/index.md
+          - Term conditions: dsl/conditions/where.md
+          - Comparisons: dsl/conditions/comparisons.md
+          - Combining conditions: dsl/conditions/logical_composition.md
+      - Updates:
+          - dsl/updates/index.md
+          - Diagonal terms: dsl/updates/identity.md
+          - Shifts: dsl/updates/shift.md
+          - Hopping: dsl/updates/hop.md
+          - Modular shifts: dsl/updates/shift_mod.md
+          - Writes: dsl/updates/write.md
+          - Swaps and permutations: dsl/updates/swap_permute.md
+          - Affine and scatter updates: dsl/updates/affine_scatter.md
+      - Emissions and matrix elements: dsl/emissions.md
+      - Diagnostics:
+          - dsl/linting/index.md
+          - Message reference: dsl/linting/messages.md
+  - Tutorials:
+      - tutorials/index.md
+      - Ising model: tutorials/ising_end_to_end.ipynb
+      - Heisenberg model: tutorials/heisenberg_end_to_end.ipynb
+      - J1–J2 model: tutorials/j1j2_end_to_end.ipynb
+  - Extending nkDSL:
+      - guides/index.md
+      - Extension guides:
+          - guides/extending_dsl/index.md
+          - Iterator clauses: guides/extending_dsl/iterators.md
+          - Predicate clauses: guides/extending_dsl/predicates.md
+          - Emission clauses: guides/extending_dsl/emissions.md
+      - Worked notebooks:
+          - advanced_tutorials/index.md
+          - Custom iterators: advanced_tutorials/custom_iterators.ipynb
+          - Custom predicates: advanced_tutorials/custom_predicates.ipynb
+          - Reading the IR: advanced_tutorials/reading_symbolic_ir.ipynb
+          - Conditional emissions: advanced_tutorials/conditional_emissions.ipynb
+          - Custom emissions: advanced_tutorials/extending_emission_clauses.ipynb
+  - Compiler:
+      - compiler.md
+      - Connectivity and deduplication: compiler_connectivity.md
+      - Operator lowering registry: compiler_operator_lowering_registry.md
+  - Developers:
+      - developers/index.md
+      - Intermediate representation: developers/ir.md
+      - Compiler pipeline and passes: developers/compiler.md
+      - Contributing documentation: contributing/documentation.md
+  - API reference:
+      - api/index.md
+      - Operator builder: api/generated/nkdsl.SymbolicDiscreteJaxOperator.md
+      - Update programs: api/generated/nkdsl.Update.md
+      - Expression context: api/generated/nkdsl.ExpressionContext.md
+      - Symbolic operators: api/generated/nkdsl.SymbolicOperator.md
+      - Compiled operators: api/generated/nkdsl.CompiledOperator.md
+      - Compiler: api/generated/nkdsl.SymbolicCompiler.md
+      - Compiler options: api/generated/nkdsl.SymbolicCompilerOptions.md
+      - Complete API catalog: api/catalog.md
+  - Project:
+      - Changelog: changelog.md
