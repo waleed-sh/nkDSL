@@ -129,7 +129,7 @@ def fullsum_vmc_energy_trace(
 
     energies: list[float] = []
     for _ in range(n_iter):
-        driver.advance(1)
+        driver.run(1, show_progress=False)
         energies.append(float(np.real(np.asarray(driver.energy.mean))))
 
     return energies, state
