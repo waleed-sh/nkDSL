@@ -14,7 +14,8 @@ Errors:
 Warnings:
    :ref:`NKDSL-W101 <lint-code-nkdsl-w101>`, :ref:`NKDSL-W103 <lint-code-nkdsl-w103>`,
    :ref:`NKDSL-W104 <lint-code-nkdsl-w104>`, :ref:`NKDSL-W301 <lint-code-nkdsl-w301>`,
-   :ref:`NKDSL-W302 <lint-code-nkdsl-w302>`, :ref:`NKDSL-W303 <lint-code-nkdsl-w303>`
+   :ref:`NKDSL-W302 <lint-code-nkdsl-w302>`, :ref:`NKDSL-W303 <lint-code-nkdsl-w303>`,
+   :ref:`NKDSL-W401 <lint-code-nkdsl-w401>`
 
 Info:
    :ref:`NKDSL-I201 <lint-code-nkdsl-i201>`, :ref:`NKDSL-I301 <lint-code-nkdsl-i301>`,
@@ -219,6 +220,33 @@ Typical causes:
 How to resolve:
    Gate shifts with predicates, use bounded rewrites (for example ``shift_mod``
    where physically appropriate), and validate write targets against local basis.
+
+.. _lint-code-nkdsl-w401:
+
+NKDSL-W401: estimated deduplication assembly overhead
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+Meaning:
+   Static cost analysis estimates more connectivity assembly work with
+   deduplication enabled than with raw branch output. The estimate accounts for
+   target aggregation, residual collision checks, lossless key packing, and
+   nonzero compaction after static optimization.
+
+Typical causes:
+   State-dependent target collisions, few removable static duplicates, or
+   compaction costs that exceed the savings from a smaller output capacity.
+
+How to resolve:
+   Benchmark ``get_conn_padded`` with and without
+   ``deduplicate_connected_components`` on the intended device and batch size.
+   Retain deduplication when unique targets are required or when fewer target
+   states reduce downstream model evaluation cost. Disabling deduplication
+   preserves repeated contributions as separate rows.
+
+The warning is a cost-model finding, not a wall-clock measurement. It never
+changes compilation options automatically. It follows the diagnostics settings,
+including ``fail_on_warnings``, and is emitted on cache misses. See
+:doc:`../../compiler_connectivity` for algorithms, metadata, and benchmarks.
 
 Info
 ----

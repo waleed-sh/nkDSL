@@ -54,6 +54,12 @@ By default, ``compile()`` enables connected-state deduplication:
 * matrix elements are summed across merged entries
 * zero-amplitude components are dropped before padding
 
+Static target analysis reduces ``max_conn_size`` when equivalence or finite
+target images prove a smaller capacity. The kernel uses exact runtime checks
+for unresolved collisions. ``NKDSL-W401`` warns about estimated assembly
+overhead without changing the requested behavior. See
+:doc:`../compiler_connectivity` for details and benchmarks.
+
 Pass ``deduplicate_connected_components=False`` to keep raw per-branch
 connectivity output.
 

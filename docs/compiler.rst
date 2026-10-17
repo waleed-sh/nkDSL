@@ -5,6 +5,7 @@ Compiler and execution
    :maxdepth: 1
 
    compiler_operator_lowering_registry
+   compiler_connectivity
 
 From DSL to executable operator
 -------------------------------
@@ -30,7 +31,7 @@ Default passes
 --------------
 
 The default pipeline created by
-:func:`nkdsl.compiler.defaults.default_symbolic_pass_pipeline` contains five
+:func:`nkdsl.compiler.defaults.default_symbolic_pass_pipeline` contains seven
 passes.
 
 Pre-cache passes
@@ -44,6 +45,8 @@ Post-cache passes
 ~~~~~~~~~~~~~~~~~
 
 * :class:`nkdsl.compiler.passes.analysis.SymbolicMaxConnSizeAnalysisPass`
+* :class:`nkdsl.compiler.passes.deduplication.SymbolicDeduplicationPass`
+* :class:`nkdsl.compiler.passes.connectivity_cost.SymbolicConnectivityCostPass`
 * :class:`nkdsl.compiler.passes.fusion.SymbolicFusionPass`
 
 Diagnostics policy and strictness
@@ -83,7 +86,7 @@ Direct compiler usage
 
    compiler = SymbolicCompiler()
    artifact = compiler.compile(symbolic_operator)
-   compiled = artifact.operator
+   compiled = artifact.compiled_operator
 
 Convenience compilation from the builder or symbolic operator is also supported:
 
@@ -104,6 +107,14 @@ By default, compiled connectivity kernels deduplicate connected states with the
 same ``x'`` target, sum their matrix elements, and drop zero-amplitude entries
 before final padding. This is controlled by
 ``deduplicate_connected_components`` (default: ``True``).
+
+The compiler groups identical target expressions, proves disjoint targets where
+possible, and limits runtime checks to unresolved collision components.
+``max_conn_size`` uses the resulting unique-target bound, which can be smaller
+than the raw emission count. The ``NKDSL-W401`` diagnostic reports an estimated
+assembly cost penalty when deduplication remains more expensive than raw output.
+See :doc:`compiler_connectivity` for algorithms, output-capacity semantics,
+metadata, and reproducible benchmarks.
 
 .. code-block:: python
 

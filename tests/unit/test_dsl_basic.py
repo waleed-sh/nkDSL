@@ -262,7 +262,8 @@ def test_conditional_and_invalidate_updates():
     )
     x2 = jnp.asarray([1, 1], dtype=jnp.int32)
     _xp2, m2 = op_invalid.get_conn_padded(x2)
-    np.testing.assert_allclose(np.asarray(m2), np.asarray([0.0, 0.0]))
+    assert op_invalid.max_conn_size == 1
+    np.testing.assert_allclose(np.asarray(m2), np.asarray([0.0]))
 
 
 def test_compiled_operator_is_jittable_with_operator_argument():

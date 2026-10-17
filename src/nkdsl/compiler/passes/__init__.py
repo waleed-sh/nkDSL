@@ -34,6 +34,8 @@ from nkdsl.compiler.passes.analysis import (
 from nkdsl.compiler.passes.fusion import (
     SymbolicFusionPass,
 )
+from nkdsl.compiler.passes.deduplication import SymbolicDeduplicationPass
+from nkdsl.compiler.passes.connectivity_cost import SymbolicConnectivityCostPass
 
 __all__ = [
     "AbstractSymbolicPass",
@@ -43,4 +45,6 @@ __all__ = [
     "SymbolicMaxConnSizeAnalysisPass",
     "SymbolicFanoutAnalysisPass",
     "SymbolicFusionPass",
+    "SymbolicDeduplicationPass",
+    "SymbolicConnectivityCostPass",
 ]

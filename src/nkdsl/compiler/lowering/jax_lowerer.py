@@ -39,6 +39,8 @@ Branch-multiset note
 ---------------------
 By default, duplicate connected states are coalesced by summing matrix
 elements and dropping zero-amplitude entries (including invalidated branches).
+Static target analysis determines the reduced output capacity and limits
+runtime collision checks to unresolved target classes.
 This behavior is controlled by
 ``SymbolicCompilerOptions.deduplicate_connected_components``.
 """
@@ -61,6 +63,12 @@ from nkdsl.compiler.core.context import (
 from nkdsl.compiler.lowering.base import (
     AbstractSymbolicLowerer,
 )
+from nkdsl.compiler.lowering.coalescing import (
+    coalesce_connected_components as _coalesce_connected_components,
+    make_planned_coalescer,
+)
+from nkdsl.compiler.core.connectivity import ConnectivityDeduplicationPlan
+from nkdsl.compiler.passes.deduplication import analyze_connectivity
 from nkdsl.debug import event as debug_event
 from nkdsl.core.compiled import create_compiled_operator
 from nkdsl.compiler.lowering.operator_registry import (
@@ -680,48 +688,6 @@ def _make_kbody_runner(
 #   Compiled operator builder
 
 
-def _coalesce_connected_components(
-    x_primes: Any,
-    matrix_elements: Any,
-    valids: Any,
-) -> tuple[Any, Any]:
-    """
-    Coalesces connected states by target configuration and drops zero amplitudes.
-
-    The output keeps a fixed leading dimension to preserve JAX static-shape
-    constraints used by ``get_conn_padded``.
-    """
-    total_conn = x_primes.shape[0]
-    zero_row = jnp.zeros((x_primes.shape[-1],), dtype=x_primes.dtype)
-
-    unique_xp, first_indices, inverse = jnp.unique(
-        x_primes,
-        axis=0,
-        return_index=True,
-        return_inverse=True,
-        size=total_conn,
-        fill_value=zero_row,
-    )
-    weighted_mels = jnp.where(valids, matrix_elements, jnp.zeros_like(matrix_elements))
-    summed_mels = jax.ops.segment_sum(weighted_mels, inverse, num_segments=total_conn)
-
-    # Keep the first-seen branch order for deterministic debug/repro behavior.
-    order = jnp.argsort(first_indices, stable=True)
-    ordered_xp = unique_xp[order]
-    ordered_mels = summed_mels[order]
-
-    keep = ordered_mels != 0
-    keep_idx = jnp.nonzero(keep, size=total_conn, fill_value=-1)[0]
-    take_idx = jnp.where(keep_idx >= 0, keep_idx, 0)
-
-    compact_xp = ordered_xp[take_idx]
-    compact_mels = ordered_mels[take_idx]
-    keep_valid = keep_idx >= 0
-    compact_xp = jnp.where(keep_valid[:, None], compact_xp, jnp.zeros_like(compact_xp))
-    compact_mels = jnp.where(keep_valid, compact_mels, jnp.zeros_like(compact_mels))
-    return compact_xp, compact_mels
-
-
 def _build_compiled_operator(
     hilbert: Any,
     operator_name: str,
@@ -733,11 +699,17 @@ def _build_compiled_operator(
     operator_type: type[Any] | None = None,
     connection_method: str = "get_conn_padded",
     deduplicate_connected_components: bool = True,
+    deduplication_plan: ConnectivityDeduplicationPlan | None = None,
 ) -> Any:
     """Composes term runners into a single compiled operator instance."""
     _runners = tuple(term_runners)
     _padded = int(total_padded_size)
     _dedup = bool(deduplicate_connected_components)
+    _coalescer = (
+        make_planned_coalescer(deduplication_plan)
+        if deduplication_plan is not None
+        else _coalesce_connected_components
+    )
 
     def _single_sample(x: Any) -> tuple:
         all_xp, all_mel, all_valid = [], [], []
@@ -752,7 +724,7 @@ def _build_compiled_operator(
         all_valid = jnp.concatenate(all_valid, axis=0)
 
         if _dedup:
-            all_xp, all_mel = _coalesce_connected_components(all_xp, all_mel, all_valid)
+            all_xp, all_mel = _coalescer(all_xp, all_mel, all_valid)
         else:
             all_mel = jnp.where(all_valid, all_mel, jnp.zeros_like(all_mel))
 
@@ -866,6 +838,11 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
             total_max_conn_size = sum(
                 _compute_term_max_conn_size(t, ir.hilbert_size) for t in ir.terms
             )
+        deduplication_plan = context.analysis("connectivity_deduplication_plan")
+        if context.options.deduplicate_connected_components:
+            if deduplication_plan is None:
+                deduplication_plan = analyze_connectivity(ir, context.operator.hilbert)
+            total_max_conn_size = deduplication_plan.output_size
         total_max_conn_size = max(1, int(total_max_conn_size))
         debug_event(
             "resolved total max_conn_size",
@@ -926,6 +903,7 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
             operator_type=lowering_target.operator_type,
             connection_method=lowering_target.connection_method,
             deduplicate_connected_components=context.options.deduplicate_connected_components,
+            deduplication_plan=deduplication_plan,
         )
 
         context.set_selected_lowerer(self._LOWERER_NAME)
@@ -953,6 +931,11 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
                 "total_padded_size": total_max_conn_size,
                 "is_hermitian": ir.is_hermitian,
                 "deduplicate_connected_components": context.options.deduplicate_connected_components,
+                "connectivity_deduplication": (
+                    deduplication_plan.as_dict() if deduplication_plan is not None else None
+                ),
+                "connectivity_cost": context.analysis("connectivity_cost"),
+                "dsl_diagnostics": context.analysis("dsl_diagnostics", default=()),
                 "operator_lowering": lowering_target.name,
                 "target_operator_type": lowering_target.operator_type_qualname,
                 "target_connection_method": lowering_target.connection_method,

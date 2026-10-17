@@ -201,7 +201,8 @@ class SymbolicOperator(AbstractSymbolicOperator):
             backend: Backend target (currently only ``"jax"`` is supported).
             operator_lowering: Registered operator-lowering target name.
             deduplicate_connected_components: Whether to merge duplicate
-                connected states and drop zero matrix elements at runtime.
+                connected states and drop zero matrix elements. Static analysis
+                derives the output capacity and plans residual runtime checks.
             cache: Whether to cache the compiled artifact in the process-level store.
             compiler: Optional :class:`~nkdsl.compiler.SymbolicCompiler`
                 instance.  When ``None`` the module-level shared compiler is used.

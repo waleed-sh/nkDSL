@@ -48,6 +48,8 @@ from nkdsl.compiler.passes.validation import (
 from nkdsl.compiler.passes.diagnostics import (
     SymbolicDiagnosticsPass,
 )
+from nkdsl.compiler.passes.deduplication import SymbolicDeduplicationPass
+from nkdsl.compiler.passes.connectivity_cost import SymbolicConnectivityCostPass
 
 # Module-level shared in-memory store (one per process)
 _DEFAULT_STORE: InMemorySymbolicArtifactStore | None = None
@@ -68,8 +70,12 @@ def default_symbolic_pass_pipeline() -> SymbolicPassPipeline:
 
     **Post-cache passes** (run only on cache misses):
         1. :class:`~nkdsl.compiler.passes.analysis.SymbolicMaxConnSizeAnalysisPass`
-           - derives per-term max-connection-size bounds and the total padded output size.
-        2. :class:`~nkdsl.compiler.passes.fusion.SymbolicFusionPass`
+           - derives raw per-term and total max-connection-size bounds.
+        2. :class:`~nkdsl.compiler.passes.deduplication.SymbolicDeduplicationPass`
+           - plans target aggregation, residual collisions, and reduced output capacity.
+        3. :class:`~nkdsl.compiler.passes.connectivity_cost.SymbolicConnectivityCostPass`
+           - reports estimated deduplication assembly overhead.
+        4. :class:`~nkdsl.compiler.passes.fusion.SymbolicFusionPass`
            - groups terms into fusion-compatible clusters for the lowerer.
 
     Returns:
@@ -83,6 +89,8 @@ def default_symbolic_pass_pipeline() -> SymbolicPassPipeline:
         ],
         post_cache_passes=[
             SymbolicMaxConnSizeAnalysisPass(),
+            SymbolicDeduplicationPass(),
+            SymbolicConnectivityCostPass(),
             SymbolicFusionPass(),
         ],
     )

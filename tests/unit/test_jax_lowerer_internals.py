@@ -419,8 +419,9 @@ def test_connected_components_deduplicate_and_drop_zero_by_default():
 
     x = jnp.asarray([0], dtype=jnp.int32)
     xp, mels = op.get_conn_padded(x)
-    np.testing.assert_array_equal(np.asarray(xp), np.asarray([[1], [0], [0], [0]], dtype=np.int32))
-    np.testing.assert_allclose(np.asarray(mels), np.asarray([1.0, 0.0, 0.0, 0.0]))
+    assert op.max_conn_size == 1
+    np.testing.assert_array_equal(np.asarray(xp), np.asarray([[1]], dtype=np.int32))
+    np.testing.assert_allclose(np.asarray(mels), np.asarray([1.0]))
 
     xp_conn, mel_conn = op.get_conn(x)
     np.testing.assert_array_equal(np.asarray(xp_conn), np.asarray([[1]], dtype=np.int32))

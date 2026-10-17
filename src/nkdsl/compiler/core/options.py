@@ -36,6 +36,8 @@ class SymbolicCompilerOptions:
             is supported, ``auto`` resolves to ``jax``).
         deduplicate_connected_components: Whether lowered connectivity kernels
             should merge duplicate connected states and drop zero matrix elements.
+            Static assembly analysis derives a reduced unique-target output bound
+            and limits runtime checks to unresolved collisions.
         enable_fusion: Whether fusion-planning passes are enabled.
         strict_validation: Whether validation passes fail hard on errors.
         cache_enabled: Whether compiled artifacts are cached in-process.

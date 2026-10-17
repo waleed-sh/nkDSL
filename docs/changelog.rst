@@ -1,8 +1,8 @@
 Changelog
 =========
 
-nkDSL v0.1.2
---------------
+Unreleased
+------------
 
 New features
 ~~~~~~~~~~~~
@@ -19,6 +19,9 @@ New features
 * Added conditional emission chaining with ``emit_if(...)``,
   ``emit_elseif(...)``, and ``emit_else(...)``.
 
+* Added ``hop(src, dst, amount=1)`` as a small occupation-transfer update helper,
+  equivalent to ``shift(src, -amount).shift(dst, +amount)``.
+
 * Added first-class emission clause extensions via
   :class:`nkdsl.AbstractEmissionClause`, :func:`nkdsl.register_emission_clause`,
   and :func:`nkdsl.available_emission_clause_names`.
@@ -29,12 +32,18 @@ New features
   ``wrap_mod()``, and ``pow(...)``), while preserving existing
   ``AmplitudeExpr.<helper>(...)`` usage.
 
-* Added ``hop(src, dst, amount=1)`` as a small occupation-transfer update helper,
-  equivalent to ``shift(src, -amount).shift(dst, +amount)``.
-
-
 Improvements
 ~~~~~~~~~~~~
+
+* Added static connectivity assembly planning with target value numbering,
+  bounded collision proofs, reduced output capacities, and finite-image bounds.
+  Unresolved collisions use exact packed keys and an adaptive direct-workspace,
+  pairwise, or single-sort algorithm. Distinct targets avoid runtime uniqueness
+  operations.
+
+* Added :class:`nkdsl.compiler.passes.connectivity_cost.SymbolicConnectivityCostPass`
+  and ``NKDSL-W401`` to report estimated deduplication assembly overhead.
+  Added reproducible before/after benchmarks across nine operator families.
 
 * Improved operator algebra ergonomics: ``sum([op1, op2, ...])`` now works for
   symbolic and compiled operators by treating numeric zero as the additive
@@ -48,7 +57,10 @@ Improvements
 Backwards incompatible changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-* None.
+* With deduplication enabled, compiled ``max_conn_size`` and padded connection
+  shapes now use the proven unique-target capacity instead of the raw branch
+  count. Code that assumes the raw padded width should use ``max_conn_size``
+  from the compiled operator or disable deduplication explicitly.
 
 Deprecations
 ~~~~~~~~~~~~

@@ -60,6 +60,13 @@ Connected states are deduplicated by default. If two branches emit the same
 ``x'``, they are merged into one row and their matrix elements are summed.
 Entries with final matrix element ``0`` are dropped before padding.
 
+The output capacity comes from static target-equivalence and finite-image
+analysis. Removed static duplicates are not restored as unused raw-branch
+padding. The connection axis retains a static upper bound across input
+configurations; state-dependent collisions can leave zero padding within that
+bound. See :doc:`../compiler_connectivity` for assembly algorithms and cost
+diagnostics.
+
 Set ``deduplicate_connected_components=False`` at compile time if you need raw
 per-branch connectivity output.
 

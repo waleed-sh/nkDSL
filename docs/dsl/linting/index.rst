@@ -38,6 +38,11 @@ In the default pipeline, linting executes before normalization:
 #. :class:`nkdsl.compiler.passes.normalization.SymbolicNormalizationPass`
 
 Post-cache passes (analysis and fusion) run afterward on cache misses.
+The post-cache
+:class:`nkdsl.compiler.passes.connectivity_cost.SymbolicConnectivityCostPass`
+also reports ``NKDSL-W401`` when its assembly cost model predicts a
+deduplication penalty. It follows the same diagnostics policy. See
+:doc:`../../compiler_connectivity` for the model and its scope.
 
 Configuration
 -------------
