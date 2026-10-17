@@ -1,0 +1,162 @@
+[
+  {
+    "previous": "advanced_tutorials/index.rst",
+    "current": "advanced_tutorials/index.md"
+  },
+  {
+    "previous": "changelog.rst",
+    "current": "changelog.md"
+  },
+  {
+    "previous": "compiler.rst",
+    "current": "compiler.md"
+  },
+  {
+    "previous": "compiler_connectivity.rst",
+    "current": "compiler_connectivity.md"
+  },
+  {
+    "previous": "compiler_operator_lowering_registry.rst",
+    "current": "compiler_operator_lowering_registry.md"
+  },
+  {
+    "previous": "dsl/conditions/comparisons.rst",
+    "current": "dsl/conditions/comparisons.md"
+  },
+  {
+    "previous": "dsl/conditions/index.rst",
+    "current": "dsl/conditions/index.md"
+  },
+  {
+    "previous": "dsl/conditions/logical_composition.rst",
+    "current": "dsl/conditions/logical_composition.md"
+  },
+  {
+    "previous": "dsl/conditions/where.rst",
+    "current": "dsl/conditions/where.md"
+  },
+  {
+    "previous": "dsl/currently_supported.rst",
+    "current": "dsl/currently_supported.md"
+  },
+  {
+    "previous": "dsl/emissions.rst",
+    "current": "dsl/emissions.md"
+  },
+  {
+    "previous": "dsl/index.rst",
+    "current": "dsl/index.md"
+  },
+  {
+    "previous": "dsl/iterators/for_each_distinct_pair.rst",
+    "current": "dsl/iterators/for_each_distinct_pair.md"
+  },
+  {
+    "previous": "dsl/iterators/for_each_kbody.rst",
+    "current": "dsl/iterators/for_each_kbody.md"
+  },
+  {
+    "previous": "dsl/iterators/for_each_pair.rst",
+    "current": "dsl/iterators/for_each_pair.md"
+  },
+  {
+    "previous": "dsl/iterators/for_each_site.rst",
+    "current": "dsl/iterators/for_each_site.md"
+  },
+  {
+    "previous": "dsl/iterators/globally.rst",
+    "current": "dsl/iterators/globally.md"
+  },
+  {
+    "previous": "dsl/iterators/index.rst",
+    "current": "dsl/iterators/index.md"
+  },
+  {
+    "previous": "dsl/linting/index.rst",
+    "current": "dsl/linting/index.md"
+  },
+  {
+    "previous": "dsl/linting/messages.rst",
+    "current": "dsl/linting/messages.md"
+  },
+  {
+    "previous": "dsl/selectors_and_expressions.rst",
+    "current": "dsl/selectors_and_expressions.md"
+  },
+  {
+    "previous": "dsl/symbolic_operator.rst",
+    "current": "dsl/symbolic_operator.md"
+  },
+  {
+    "previous": "dsl/updates/affine_scatter.rst",
+    "current": "dsl/updates/affine_scatter.md"
+  },
+  {
+    "previous": "dsl/updates/hop.rst",
+    "current": "dsl/updates/hop.md"
+  },
+  {
+    "previous": "dsl/updates/identity.rst",
+    "current": "dsl/updates/identity.md"
+  },
+  {
+    "previous": "dsl/updates/index.rst",
+    "current": "dsl/updates/index.md"
+  },
+  {
+    "previous": "dsl/updates/shift.rst",
+    "current": "dsl/updates/shift.md"
+  },
+  {
+    "previous": "dsl/updates/shift_mod.rst",
+    "current": "dsl/updates/shift_mod.md"
+  },
+  {
+    "previous": "dsl/updates/swap_permute.rst",
+    "current": "dsl/updates/swap_permute.md"
+  },
+  {
+    "previous": "dsl/updates/write.rst",
+    "current": "dsl/updates/write.md"
+  },
+  {
+    "previous": "guides/extending_dsl/emissions.rst",
+    "current": "guides/extending_dsl/emissions.md"
+  },
+  {
+    "previous": "guides/extending_dsl/index.rst",
+    "current": "guides/extending_dsl/index.md"
+  },
+  {
+    "previous": "guides/extending_dsl/iterators.rst",
+    "current": "guides/extending_dsl/iterators.md"
+  },
+  {
+    "previous": "guides/extending_dsl/predicates.rst",
+    "current": "guides/extending_dsl/predicates.md"
+  },
+  {
+    "previous": "guides/index.rst",
+    "current": "guides/index.md"
+  },
+  {
+    "previous": "index.rst",
+    "current": "index.md"
+  },
+  {
+    "previous": "overview.rst",
+    "current": "overview.md"
+  },
+  {
+    "previous": "quickstart.rst",
+    "current": "quickstart.md"
+  },
+  {
+    "previous": "tutorials/index.rst",
+    "current": "tutorials/index.md"
+  },
+  {
+    "previous": "api/index.rst",
+    "current": "api/index.md"
+  }
+]

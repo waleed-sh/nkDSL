@@ -1,0 +1,125 @@
+{
+  "notebooks": {
+    "docs/advanced_tutorials/conditional_emissions.ipynb": {
+      "environment": {
+        "flax": "0.12.8",
+        "ipykernel": "7.4.0",
+        "jax": "0.10.2",
+        "jaxlib": "0.10.2",
+        "nbclient": "0.11.0",
+        "netket": "3.22.4",
+        "numpy": "2.5.4",
+        "python": "3.13.11"
+      },
+      "output_sanitization": "portable-python-locations-v1",
+      "results_sha256": "51162347ac043ef523a844e7a8d9c3a17c0d1dfe651cb1845ca4d8e9ee452e47",
+      "source_sha256": "d1dd8d88cb68ed86700bb835dad754955038a9b81684418f8929e8c79f8439d6"
+    },
+    "docs/advanced_tutorials/custom_iterators.ipynb": {
+      "environment": {
+        "flax": "0.12.8",
+        "ipykernel": "7.4.0",
+        "jax": "0.10.2",
+        "jaxlib": "0.10.2",
+        "nbclient": "0.11.0",
+        "netket": "3.22.4",
+        "numpy": "2.5.4",
+        "python": "3.13.11"
+      },
+      "output_sanitization": "portable-python-locations-v1",
+      "results_sha256": "911c66803e92140ed5151b9d638991e06a7b6338fde43364295b2121c9642969",
+      "source_sha256": "7752039da77355f4de4a41f20edd33ca5a6d46c6db8bb54991eb0ca923bfeebd"
+    },
+    "docs/advanced_tutorials/custom_predicates.ipynb": {
+      "environment": {
+        "flax": "0.12.8",
+        "ipykernel": "7.4.0",
+        "jax": "0.10.2",
+        "jaxlib": "0.10.2",
+        "nbclient": "0.11.0",
+        "netket": "3.22.4",
+        "numpy": "2.5.4",
+        "python": "3.13.11"
+      },
+      "output_sanitization": "portable-python-locations-v1",
+      "results_sha256": "6a90385eaea67ffb0f8a713ddd48160eb75810c788f8fc287ac57ac58ad67607",
+      "source_sha256": "20ffeeee1d51e34fba0651a8d93e2d58b6e65dda7c658507281a47ede52e8642"
+    },
+    "docs/advanced_tutorials/extending_emission_clauses.ipynb": {
+      "environment": {
+        "flax": "0.12.8",
+        "ipykernel": "7.4.0",
+        "jax": "0.10.2",
+        "jaxlib": "0.10.2",
+        "nbclient": "0.11.0",
+        "netket": "3.22.4",
+        "numpy": "2.5.4",
+        "python": "3.13.11"
+      },
+      "output_sanitization": "portable-python-locations-v1",
+      "results_sha256": "b414bff57f9f96cba033da5dbbbcd369a098dd00002c2e246e466cf96cc07ca7",
+      "source_sha256": "6e0718ab3e93262e2697a3a1a26332064d07019a60ff71c2a37a199c195e2695"
+    },
+    "docs/advanced_tutorials/reading_symbolic_ir.ipynb": {
+      "environment": {
+        "flax": "0.12.8",
+        "ipykernel": "7.4.0",
+        "jax": "0.10.2",
+        "jaxlib": "0.10.2",
+        "nbclient": "0.11.0",
+        "netket": "3.22.4",
+        "numpy": "2.5.4",
+        "python": "3.13.11"
+      },
+      "output_sanitization": "portable-python-locations-v1",
+      "results_sha256": "4ca7d2a00d76cae050b9cfb3daab2ac8cede9c5f1b059f2b955de5cce6d8dc4d",
+      "source_sha256": "122c34f27012a71041c2bea639113099c5b391d45f33989855f97b35d79e7e28"
+    },
+    "docs/tutorials/heisenberg_end_to_end.ipynb": {
+      "environment": {
+        "flax": "0.12.8",
+        "ipykernel": "7.4.0",
+        "jax": "0.10.2",
+        "jaxlib": "0.10.2",
+        "nbclient": "0.11.0",
+        "netket": "3.22.4",
+        "numpy": "2.5.4",
+        "python": "3.13.11"
+      },
+      "output_sanitization": "portable-python-locations-v1",
+      "results_sha256": "587d9e6672fcfcca58e7a07b6813de136ee158e5807d47cef3f7805998353994",
+      "source_sha256": "523e68552371024b5d2e8f33c7ee41ffe627f447a2bd6d3bbe0b041d2b7d0a6a"
+    },
+    "docs/tutorials/ising_end_to_end.ipynb": {
+      "environment": {
+        "flax": "0.12.8",
+        "ipykernel": "7.4.0",
+        "jax": "0.10.2",
+        "jaxlib": "0.10.2",
+        "nbclient": "0.11.0",
+        "netket": "3.22.4",
+        "numpy": "2.5.4",
+        "python": "3.13.11"
+      },
+      "output_sanitization": "portable-python-locations-v1",
+      "results_sha256": "1bcea7426348940af8a76e939b2bbdfda2a3b81f516d7917cd220ff902acbea2",
+      "source_sha256": "e77dbafa9dec7fb7bf18961e196330ea63049e5779ed41bf58d395c124dd730c"
+    },
+    "docs/tutorials/j1j2_end_to_end.ipynb": {
+      "environment": {
+        "flax": "0.12.8",
+        "ipykernel": "7.4.0",
+        "jax": "0.10.2",
+        "jaxlib": "0.10.2",
+        "nbclient": "0.11.0",
+        "netket": "3.22.4",
+        "numpy": "2.5.4",
+        "python": "3.13.11"
+      },
+      "output_sanitization": "portable-python-locations-v1",
+      "results_sha256": "1c9c7aad201edeef062ecec694ca6a7c8342c646f73225e3bb0019dc5ac9e835",
+      "source_sha256": "a2d90fa26847708e651d5a01d89ce5e5a10fff4c907e9c6049430a4f11e1d0c9"
+    }
+  },
+  "schema": 1
+}
