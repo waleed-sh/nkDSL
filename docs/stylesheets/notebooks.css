@@ -95,6 +95,4 @@
 }
 .notebook-copy:hover, .notebook-copy:focus-visible { color: var(--md-accent-fg-color); }
 .notebook-copy-status { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.rtd-version { margin-left: 0.6rem; font-size: 0.6rem; white-space: nowrap; }
-.rtd-version select { color: inherit; background: var(--md-default-bg-color); border-radius: 3px; padding: 0.15rem; }
 .doc-heading code { overflow-wrap: anywhere; }
