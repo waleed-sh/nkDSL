@@ -783,7 +783,10 @@ class SymbolicDiscreteJaxOperator:
         Iterates over a **static list of ordered plaquettes** (4-body).
 
         Args:
-            label_*: Site labels for the four corners.
+            label_a: Site label for the first corner.
+            label_b: Site label for the second corner.
+            label_c: Site label for the third corner.
+            label_d: Site label for the fourth corner.
             over: Sequence of ``(i, j, k, l)`` integer index 4-tuples.
 
         Returns:

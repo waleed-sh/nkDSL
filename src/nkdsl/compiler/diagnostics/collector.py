@@ -34,9 +34,9 @@ def run_default_diagnostics(
     """Runs all default diagnostics rules over one compilation input.
 
     Args:
-        operator: Source symbolic operator.
-        ir: Symbolic operator IR.
-        options: Effective compiler options.
+        operator (AbstractSymbolicOperator): Source symbolic operator.
+        ir (SymbolicOperatorIR): Symbolic operator IR.
+        options (SymbolicCompilerOptions): Effective compiler options.
 
     Returns:
         Ordered tuple of diagnostics from all executed rules.
