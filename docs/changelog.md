@@ -11,6 +11,14 @@
 
 - With deduplication enabled, compiled `max_conn_size` and padded connection shapes now use the proven unique-target capacity instead of the raw branch count. Code that assumes the raw padded width should use `max_conn_size` from the compiled operator or disable deduplication explicitly.
 
+### Bug fixes
+
+- Fixed connectivity diagnostics blocking compilation of non-indexable Hilbert
+  spaces. Diagnostics now prefer reproducible `random_state` samples, guard
+  optional cardinality reads, and avoid full enumeration for a small source
+  sample. `NKDSL-I303` reports unavailable dynamic checks without treating them
+  as an invalid operator.
+
 ### Tests
 
 - Updated VMC integration checks to use the supported NetKet driver API.
@@ -19,6 +27,9 @@
 
 ### Documentation
 
+- Added a Kogut–Susskind tutorial using neuraLQX, with an explanation of the
+  cyclic gauge model, exact finite-matrix checks, a VMC calculation, and a
+  validated handwritten computational JAX implementation.
 - Migrated the site to MkDocs and Material while retaining existing page URLs
   and the complete API reference. Reorganised the guides and revised the prose.
 - Added copy buttons, notebook downloads, and verified saved notebook outputs.
@@ -35,6 +46,9 @@
   when JavaScript is unavailable.
 
 ## nkDSL v0.1.2a0
+
+The changes below shipped in the release published on 19 May 2026 under
+[GitHub tag `v0.1.2`](https://github.com/waleed-sh/nkDSL/releases/tag/v0.1.2).
 
 ### New features
 

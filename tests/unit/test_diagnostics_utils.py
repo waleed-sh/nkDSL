@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import jax
 import numpy as np
 import netket as nk
 import pytest
@@ -202,6 +203,140 @@ def test_state_sampling_internal_edge_cases():
     )
     assert illegal_local_state_positions(np.asarray([1], dtype=np.int32), None) == ()
     assert illegal_local_state_positions(np.asarray([1], dtype=np.int32), np.zeros((1, 1))) == ()
+
+
+def test_non_indexable_hilbert_diagnostics_do_not_access_indexing_apis():
+    class _NonIndexableHilbert:
+        is_indexable = False
+
+        @property
+        def n_states(self):
+            pytest.fail("Diagnostics must not read non-indexable cardinality")
+
+        def all_states(self):
+            pytest.fail("Diagnostics must not enumerate a non-indexable space")
+
+        def numbers_to_states(self, numbers):
+            pytest.fail("Diagnostics must not index a non-indexable space")
+
+    hi = _NonIndexableHilbert()
+    assert sample_source_states(hi, max_samples=4) is None
+    assert build_hilbert_support_lookup(hi, max_states=64) is None
+
+
+def test_non_indexable_hilbert_uses_reproducible_direct_sampling():
+    class _SampleableHilbert:
+        is_indexable = False
+
+        @property
+        def n_states(self):
+            pytest.fail("Direct sampling must not read Hilbert cardinality")
+
+        def random_state(self, key, size):
+            assert size == 4
+            return jax.random.randint(key, (size, 8), 0, 2)
+
+    hi = _SampleableHilbert()
+    rows = sample_source_states(hi, max_samples=4)
+    assert rows.shape == (4, 8)
+    np.testing.assert_array_equal(rows, sample_source_states(hi, max_samples=4))
+    assert build_hilbert_support_lookup(hi, max_states=64) is None
+
+
+def test_large_constrained_hilbert_uses_netket_direct_sampling():
+    hi = nk.hilbert.Fock(n_max=1, N=64, n_particles=32)
+    assert not hi.is_indexable
+    rows = sample_source_states(hi, max_samples=4)
+    assert rows.shape == (4, 64)
+    np.testing.assert_array_equal(np.sum(rows, axis=1), 32)
+
+
+def test_generic_custom_constraint_rejection_sampling_is_not_invoked():
+    class _UnavailableConstraint(nk.hilbert.constraint.DiscreteHilbertConstraint):
+        def __call__(self, states):
+            pytest.fail("Diagnostics must not enter NetKet's unbounded rejection sampler")
+
+    hi = nk.hilbert.HomogeneousHilbert(
+        nk.utils.StaticRange(start=0, step=1, length=2),
+        N=64,
+        constraint=_UnavailableConstraint(),
+    )
+    assert not hi.is_indexable
+    assert sample_source_states(hi, max_samples=4) is None
+
+
+@pytest.mark.parametrize("attribute", ("is_indexable", "n_states"))
+def test_diagnostics_skip_unavailable_indexing_metadata(attribute):
+    def unavailable(self):
+        raise RuntimeError("The hilbert space is too large to be indexed.")
+
+    hilbert_type = type("UnavailableIndex", (), {attribute: property(unavailable)})
+    hi = hilbert_type()
+    assert sample_source_states(hi, max_samples=4) is None
+    assert build_hilbert_support_lookup(hi, max_states=64) is None
+
+
+def test_source_state_sampling_requests_only_a_bounded_index_prefix():
+    class _LargeIndexableHilbert:
+        is_indexable = True
+        n_states = 2**30
+
+        def all_states(self):
+            pytest.fail("A small diagnostic sample must not enumerate the full space")
+
+        def numbers_to_states(self, numbers):
+            np.testing.assert_array_equal(numbers, np.arange(4))
+            return np.stack((numbers, numbers + 1), axis=1)
+
+    rows = sample_source_states(_LargeIndexableHilbert(), max_samples=4)
+    np.testing.assert_array_equal(rows, np.stack((np.arange(4), np.arange(1, 5)), axis=1))
+
+
+def test_all_states_sampling_fallback_requires_a_small_known_cardinality():
+    class _SmallHilbert:
+        n_states = 2
+
+        def all_states(self):
+            return np.asarray([[0, 1], [1, 0]])
+
+    np.testing.assert_array_equal(
+        sample_source_states(_SmallHilbert(), max_samples=4), [[0, 1], [1, 0]]
+    )
+    assert sample_source_states(_SmallHilbert(), max_samples=1) is None
+
+
+def test_failed_direct_sampling_falls_back_to_bounded_indexing():
+    class _BrokenSamplerHilbert:
+        is_indexable = True
+        n_states = 2
+
+        def random_state(self, key, size):
+            raise NotImplementedError("Sampling is not implemented")
+
+        def numbers_to_states(self, numbers):
+            return np.asarray(numbers)[:, None]
+
+    np.testing.assert_array_equal(
+        sample_source_states(_BrokenSamplerHilbert(), max_samples=4), [[0], [1]]
+    )
+
+
+def test_connectivity_rule_reports_unavailable_source_sampling():
+    op = (
+        nkdsl.SymbolicDiscreteJaxOperator(nk.hilbert.Fock(n_max=1, N=1), "no-samples")
+        .for_each_site("i")
+        .emit(matrix_element=1.0)
+        .build()
+    )
+    context = DiagnosticRuleContext(
+        operator=type("Op", (), {"hilbert": object()})(),
+        ir=op.to_ir(),
+        options=SymbolicCompilerOptions(),
+    )
+    diagnostics = GeneratedConnectivityValidityRule().run(context)
+    assert len(diagnostics) == 1
+    assert diagnostics[0].code == "NKDSL-I303"
+    assert diagnostics[0].severity == "info"
 
 
 def test_traversal_helpers_cover_static_index_nodes():

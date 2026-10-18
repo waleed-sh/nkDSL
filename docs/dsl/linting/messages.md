@@ -197,13 +197,17 @@ Add explicit tags to each emission so logs and diagnostics stay easy to parse.
 ### NKDSL-I301: skipped exact support-membership checks
 
 Meaning:  
-Exact support lookup was skipped because Hilbert cardinality exceeded `lint_max_exact_hilbert_states`.
+Exact support lookup was skipped because the Hilbert space could not be indexed
+or enumerated, or its cardinality exceeded `lint_max_exact_hilbert_states`.
 
 Typical causes:  
-Hilbert space is too large for exact support enumeration within configured diagnostics limits.
+The Hilbert space is not indexable, does not provide full state enumeration,
+or is too large for exact support enumeration within the configured limits.
 
 How to resolve:  
-Increase `lint_max_exact_hilbert_states` if memory/time budget allows, or rely on sampled diagnostics for large spaces.
+Sampled local-basis and constraint checks continue when source sampling is
+available. Increasing `lint_max_exact_hilbert_states` can enable exact checks
+for a small indexable space, but it cannot make a non-indexable space indexable.
 
 <a id="lint-code-nkdsl-i302"></a>
 
@@ -217,3 +221,22 @@ Missing runtime symbols, non-evaluable branch context during diagnostics, or une
 
 How to resolve:  
 Resolve runtime bindings before compile and ensure branch expressions can be evaluated under diagnostics sampling.
+
+<a id="lint-code-nkdsl-i303"></a>
+
+### NKDSL-I303: skipped source-state sampling
+
+Meaning:  
+Dynamic connectivity checks were skipped because direct sampling and bounded
+indexing could not provide source configurations. Static diagnostics still run.
+
+Typical causes:  
+The Hilbert space lacks a working `random_state` implementation and cannot be
+indexed. A custom constraint may also use NetKet's generic rejection sampler,
+which diagnostics skip to avoid an unbounded search for valid states.
+
+How to resolve:  
+Provide a constraint-aware `hilbert.random_state` implementation or register
+an efficient sampler with NetKet. The informational message does not prevent
+compilation. Check operator action on valid configurations from your own
+sampler when no compiler-side source sample is available.

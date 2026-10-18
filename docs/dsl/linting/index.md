@@ -43,6 +43,26 @@ Lint behavior is controlled by [`nkdsl.SymbolicCompilerOptions`](../../api/gener
 - `lint_branch_sample_cap`: cap sampled branch evaluations
 - `lint_max_exact_hilbert_states`: limit exact support-membership checks to manageable Hilbert sizes
 
+Connectivity checks first request `lint_state_sample_size` source states through
+`hilbert.random_state`, using a fixed local seed. This works with large Hilbert
+spaces that support sampling but cannot be indexed, including neuraLQX's
+constrained gauge spaces. It does not change the random keys used by your VMC
+calculation.
+
+If direct sampling is unavailable, diagnostics try a bounded prefix of indexed
+states. Full enumeration is used for source sampling only when the known state
+count fits the sample cap. NetKet's generic rejection sampler for custom
+constraints is skipped because it has no retry limit. A registered sampling
+implementation or an overridden `random_state` method can supply valid states
+without that fallback.
+
+Exact support-membership checks still require an indexable space within
+`lint_max_exact_hilbert_states`. When that lookup is unavailable, sampled local
+basis and constraint checks continue, with `NKDSL-I301` recording the omitted
+exact check. If neither sampling nor bounded indexing provides source states,
+`NKDSL-I303` records that the dynamic connectivity checks were skipped. Static
+diagnostics still run, and these informational messages do not block compilation.
+
 Example:
 
 ```python

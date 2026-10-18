@@ -105,7 +105,22 @@ class GeneratedConnectivityValidityRule(AbstractDiagnosticRule):
             max_samples=options.lint_state_sample_size,
         )
         if samples is None or samples.size == 0:
-            return ()
+            return (
+                DSLDiagnostic.create(
+                    code="NKDSL-I303",
+                    severity="info",
+                    message=(
+                        "Skipped sampled connectivity checks because no source states "
+                        "could be obtained through direct sampling or bounded indexing."
+                    ),
+                    operator_name=ir.operator_name,
+                    suggestion=(
+                        "Provide a constraint-aware hilbert.random_state implementation "
+                        "to enable connectivity diagnostics without Hilbert enumeration."
+                    ),
+                    context={"lint_state_sample_size": options.lint_state_sample_size},
+                ),
+            )
 
         support_lookup = build_hilbert_support_lookup(
             hilbert,
@@ -230,7 +245,8 @@ class GeneratedConnectivityValidityRule(AbstractDiagnosticRule):
                     severity="info",
                     message=(
                         "Skipped exact Hilbert-support membership checks because "
-                        "the Hilbert space is too large for exhaustive support lookup."
+                        "bounded support enumeration is unavailable or exceeds the "
+                        "configured Hilbert-state limit."
                     ),
                     operator_name=ir.operator_name,
                     context={

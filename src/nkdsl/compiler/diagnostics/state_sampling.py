@@ -19,6 +19,8 @@ from __future__ import annotations
 
 from typing import Any
 
+import jax
+import netket as nk
 import numpy as np
 
 
@@ -33,7 +35,24 @@ def _safe_int(value: Any) -> int | None:
     """
     try:
         return int(value)
-    except (TypeError, ValueError):
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def _indexable_state_count(hilbert: Any) -> int | None:
+    """Reads cardinality only when Hilbert indexing is available.
+
+    Args:
+        hilbert: Discrete Hilbert space object.
+
+    Returns:
+        State count or ``None`` when indexing metadata is unavailable.
+    """
+    try:
+        if not bool(getattr(hilbert, "is_indexable", True)):
+            return None
+        return _safe_int(getattr(hilbert, "n_states", None))
+    except Exception:
         return None
 
 
@@ -57,6 +76,42 @@ def _state_rows(array_like: Any) -> np.ndarray | None:
     return None
 
 
+def _random_source_states(hilbert: Any, cap: int) -> np.ndarray | None:
+    """Requests a reproducible sample without invoking generic rejection sampling.
+
+    Args:
+        hilbert: Discrete Hilbert space object.
+        cap: Maximum number of source states to request.
+
+    Returns:
+        Sampled state rows or ``None`` when direct sampling is unavailable.
+    """
+    try:
+        sampler = getattr(hilbert, "random_state", None)
+        if not callable(sampler):
+            return None
+        key = jax.random.PRNGKey(0)
+        if (
+            getattr(sampler, "__func__", None) is nk.hilbert.AbstractHilbert.random_state
+            and isinstance(hilbert, nk.hilbert.HomogeneousHilbert)
+            and hilbert.constraint is not None
+        ):
+            # NetKet's generic custom-constraint fallback retries indefinitely.
+            # Resolve its dispatch without running it. Registered samplers and
+            # overridden random_state methods remain available to diagnostics.
+            dispatch = nk.hilbert.random.random_state
+            implementation, _ = dispatch.resolve_method((hilbert, hilbert.constraint, key, cap))
+            fallback, _ = dispatch.resolve_method((hilbert, object(), key, cap))
+            if implementation is fallback:
+                return None
+        rows = _state_rows(sampler(key, size=cap))
+    except Exception:
+        return None
+    if rows is None or rows.shape[0] == 0:
+        return None
+    return rows[:cap]
+
+
 def sample_source_states(
     hilbert: Any,
     *,
@@ -65,8 +120,12 @@ def sample_source_states(
     """Samples source states used by dynamic connectivity diagnostics.
 
     Sampling priority:
-    1. ``hilbert.all_states()``
-    2. ``hilbert.numbers_to_states(range(...))`` when indexable
+    1. ``hilbert.random_state(...)`` with a fixed local seed
+    2. A bounded ``hilbert.numbers_to_states(...)`` prefix when indexable
+    3. ``hilbert.all_states()`` when its known cardinality fits the sample cap
+
+    NetKet's generic rejection sampler for custom constraints is skipped.
+    Source sampling does not require the Hilbert space to be indexable.
 
     Args:
         hilbert: Discrete Hilbert space object.
@@ -79,25 +138,31 @@ def sample_source_states(
     if cap == 0:
         return None
 
-    if hasattr(hilbert, "all_states"):
-        try:
-            all_states = hilbert.all_states()
-            rows = _state_rows(all_states)
-            if rows is not None and rows.shape[0] > 0:
-                return rows[:cap]
-        except Exception:
-            pass
+    rows = _random_source_states(hilbert, cap)
+    if rows is not None:
+        return rows
 
-    n_states = _safe_int(getattr(hilbert, "n_states", None))
-    if n_states is None or n_states <= 0 or not hasattr(hilbert, "numbers_to_states"):
+    n_states = _indexable_state_count(hilbert)
+    if n_states is None or n_states <= 0:
         return None
 
     try:
         numbers = np.arange(min(cap, n_states), dtype=np.int64)
         rows = _state_rows(hilbert.numbers_to_states(numbers))
+        if rows is not None and rows.shape[0] > 0:
+            return rows[:cap]
+    except Exception:
+        pass
+
+    if n_states > cap:
+        return None
+    try:
+        rows = _state_rows(hilbert.all_states())
     except Exception:
         return None
-    return rows
+    if rows is None or rows.shape[0] == 0:
+        return None
+    return rows[:cap]
 
 
 def build_hilbert_support_lookup(
@@ -115,8 +180,10 @@ def build_hilbert_support_lookup(
         Set of valid state tuples when feasible, else ``None``.
     """
     cap = max(0, int(max_states))
-    n_states = _safe_int(getattr(hilbert, "n_states", None))
-    if n_states is None or n_states <= 0 or n_states > cap or not hasattr(hilbert, "all_states"):
+    if cap == 0:
+        return None
+    n_states = _indexable_state_count(hilbert)
+    if n_states is None or n_states <= 0 or n_states > cap:
         return None
     try:
         states = _state_rows(hilbert.all_states())
