@@ -13,7 +13,7 @@ Warnings:
 [NKDSL-W101](messages.md#lint-code-nkdsl-w101), [NKDSL-W103](messages.md#lint-code-nkdsl-w103), [NKDSL-W104](messages.md#lint-code-nkdsl-w104), [NKDSL-W301](messages.md#lint-code-nkdsl-w301), [NKDSL-W302](messages.md#lint-code-nkdsl-w302), [NKDSL-W303](messages.md#lint-code-nkdsl-w303), [NKDSL-W401](messages.md#lint-code-nkdsl-w401)
 
 Info:  
-[NKDSL-I201](messages.md#lint-code-nkdsl-i201), [NKDSL-I301](messages.md#lint-code-nkdsl-i301), [NKDSL-I302](messages.md#lint-code-nkdsl-i302)
+[NKDSL-I201](messages.md#lint-code-nkdsl-i201), [NKDSL-I301](messages.md#lint-code-nkdsl-i301), [NKDSL-I302](messages.md#lint-code-nkdsl-i302), [NKDSL-I303](messages.md#lint-code-nkdsl-i303)
 
 ## Errors
 
