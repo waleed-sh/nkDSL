@@ -21,10 +21,13 @@ constrained = (
 Multiple `where` calls on the same term are combined with logical AND.
 
 ```python
+from nkdsl import ExpressionContext
+
+ctx = ExpressionContext()
 op = (
     SymbolicDiscreteJaxOperator(hi, "hop")
     .for_each_pair("i", "j")
-    .where(site("i").index != site("j").index)
+    .where(ctx.ne(site("i").index, site("j").index))
     .where(site("i") > 0)
     .where(site("j") < nmax)
     .emit(shift("i", -1).shift("j", +1))

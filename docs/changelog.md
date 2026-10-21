@@ -13,6 +13,10 @@
 
 ### Bug fixes
 
+- Fixed equality and inequality against scalar values on amplitude expressions,
+  including `site("e").index == edge_index` and `site("e").value == charge`.
+  Expression-to-expression equality remains structural, preserving existing IR
+  comparisons, hashing, and compiler cache behavior.
 - Fixed connectivity diagnostics blocking compilation of non-indexable Hilbert
   spaces. Diagnostics now prefer reproducible `random_state` samples, guard
   optional cardinality reads, and avoid full enumeration for a small source

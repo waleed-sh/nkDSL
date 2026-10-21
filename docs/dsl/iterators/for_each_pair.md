@@ -13,10 +13,13 @@ Use it when:
 Example:
 
 ```python
+from nkdsl import ExpressionContext
+
+ctx = ExpressionContext()
 hop = (
     SymbolicDiscreteJaxOperator(hi, "hop")
     .for_each_pair("i", "j")
-    .where(site("i").index != site("j").index)
+    .where(ctx.ne(site("i").index, site("j").index))
     .where(site("i") > 0)
     .where(site("j") < nmax)
     .emit(shift("i", -1).shift("j", +1), matrix_element=1.0)

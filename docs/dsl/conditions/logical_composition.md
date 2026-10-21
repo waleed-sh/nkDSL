@@ -12,7 +12,7 @@ Predicates can be combined with boolean operators.
 
 ```python
 pred = (site("i") > 0) & (site("j") < 2)
-pred = (site("i") == site("j")) | (site("i") == 0)
+pred = (site("i").value == 1) | (site("j").value == 0)
 pred = ~(site("i") < 0)
 ```
 
@@ -37,7 +37,10 @@ For a longer rule, name intermediate predicates. This keeps the physical
 requirements visible without changing how the expression is compiled:
 
 ```python
-different_sites = site("i").index != site("j").index
+from nkdsl import ExpressionContext
+
+ctx = ExpressionContext()
+different_sites = ctx.ne(site("i").index, site("j").index)
 source_occupied = site("i").value > 0
 destination_available = site("j").value < nmax
 allowed = different_sites & source_occupied & destination_available

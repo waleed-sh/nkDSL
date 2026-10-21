@@ -29,8 +29,14 @@ Example:
 from nkdsl import emitted, site, symbol
 
 amplitude = symbol("g") * site("i").value * emitted("j").value
-predicate = (site("i").index != site("j").index) & (site("i") > 0)
+predicate = (site("i").index == 3) & (site("i").value != 0)
 ```
+
+Equality against a number builds a runtime predicate. Equality between two
+`AmplitudeExpr` objects retains structural comparison for compatibility with
+IR code. Use `ExpressionContext.eq` or `ExpressionContext.ne` when both sides
+are expressions whose evaluated values should be compared. See
+[comparison predicates](conditions/comparisons.md).
 
 ## Symbol declarations
 

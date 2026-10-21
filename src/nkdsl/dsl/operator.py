@@ -708,9 +708,9 @@ class SymbolicDiscreteJaxOperator:
         """
         Iterates over all ordered pairs ``(i, j)`` with ``i, j ∈ [0, N)``.
 
-        Includes diagonal pairs ``(i, i)``. To exclude them add a predicate
-        ``.where(site(label_a).index != site(label_b).index)`` or use
-        ``.for_each_distinct_pair()``.
+        Includes diagonal pairs ``(i, i)``. To exclude them use
+        ``.for_each_distinct_pair()`` or an explicit expression comparison,
+        built with ``ExpressionContext.ne`` or ``PredicateExpr.ne``.
 
         Args:
             label_a: Primary site label.

@@ -151,6 +151,12 @@ class AmplitudeExpr:
     Attributes:
         op: Expression operation name.
         args: Ordered operation arguments (frozen tuple).
+
+    Equality and inequality against numeric constants or symbol strings build
+    symbolic predicates. Comparisons between two amplitude expressions retain
+    structural equality so expression trees remain usable as dictionary keys
+    and in compiler caches. Use ``PredicateExpr.eq`` or ``PredicateExpr.ne``
+    for runtime equality comparisons between two amplitude expressions.
     """
 
     op: str
@@ -343,7 +349,28 @@ class AmplitudeExpr:
 
     #
     #
-    # Comparison operators yield PredicateExpr (imported lazily)
+    # Scalar comparisons yield PredicateExpr (imported lazily).
+    # Expression-to-expression equality retains the dataclass semantics.
+
+    def __eq__(self, other: Any) -> Any:
+        """Compares expression trees structurally or builds a scalar equality predicate."""
+        if other.__class__ is self.__class__:
+            return (self.op, self.args) == (other.op, other.args)
+        if isinstance(other, (numbers.Number, str)) and not isinstance(other, (bool, np.bool_)):
+            from .predicates import PredicateExpr
+
+            return PredicateExpr.eq(self, other)
+        return NotImplemented
+
+    def __ne__(self, other: Any) -> Any:
+        """Compares expression trees structurally or builds a scalar inequality predicate."""
+        if other.__class__ is self.__class__:
+            return (self.op, self.args) != (other.op, other.args)
+        if isinstance(other, (numbers.Number, str)) and not isinstance(other, (bool, np.bool_)):
+            from .predicates import PredicateExpr
+
+            return PredicateExpr.ne(self, other)
+        return NotImplemented
 
     def __lt__(self, other: Any) -> Any:
         from .predicates import PredicateExpr
