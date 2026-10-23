@@ -1,6 +1,6 @@
 # Changelog
 
-## nkDSL v0.1.3b0
+## nkDSL v0.1.3
 
 ### New features
 
