@@ -17,6 +17,7 @@
 
 from __future__ import annotations
 
+import dataclasses
 from typing import Any
 
 from nkdsl.compiler.cache.store import (
@@ -107,12 +108,16 @@ class SymbolicCompiler:
 
         self._pipeline = pipeline or default_symbolic_pass_pipeline()
         self._operator_lowering_registry = (
-            operator_lowering_registry or default_symbolic_operator_lowering_registry()
+            operator_lowering_registry
+            if operator_lowering_registry is not None
+            else default_symbolic_operator_lowering_registry()
         )
         self._registry = lowerer_registry or default_symbolic_lowerer_registry(
             operator_lowering_registry=self._operator_lowering_registry
         )
-        self._store = artifact_store or InMemorySymbolicArtifactStore()
+        self._store = (
+            artifact_store if artifact_store is not None else InMemorySymbolicArtifactStore()
+        )
 
         resolved_options = options or SymbolicCompilerOptions()
         if (
@@ -214,6 +219,20 @@ class SymbolicCompiler:
             term_count=ir.term_count,
         )
 
+        # Bind the target once so configuration changes cannot alter this compile.
+        requested_lowering = effective_options.operator_lowering
+        if requested_lowering is None:
+            requested_lowering = self._options.operator_lowering
+        try:
+            lowering_target = self._operator_lowering_registry.resolve(requested_lowering)
+        except Exception as exc:
+            raise SymbolicCompilerError(
+                f"Cannot resolve operator lowering for {ir.operator_name!r}: {exc}"
+            ) from exc
+        effective_options = dataclasses.replace(
+            effective_options, operator_lowering=lowering_target.name
+        )
+
         # Build context
         context = SymbolicCompilationContext(
             operator=operator,
@@ -221,6 +240,7 @@ class SymbolicCompiler:
             options=effective_options,
             metadata=metadata,
         )
+        context.set_analysis("operator_lowering_target", lowering_target)
         debug_event(
             "created compilation context",
             scope="compile",
@@ -249,6 +269,7 @@ class SymbolicCompiler:
             sig = SymbolicCompilationSignature.from_context(context)
             cache_key = sig.build_cache_key(
                 namespace=effective_options.cache_namespace,
+                extension_context={"operator_lowering_target": lowering_target.cache_signature},
             )
             cached = self._store.get(cache_key)
             if cached is not None:
@@ -377,6 +398,11 @@ class SymbolicCompiler:
     def clear_cache(self) -> None:
         """Clears all entries from the artifact store."""
         self._store.clear()
+
+    @property
+    def options(self) -> SymbolicCompilerOptions:
+        """Compiler defaults, with omitted lowering resolved on each invocation."""
+        return self._options
 
     @property
     def cache_size(self) -> int:

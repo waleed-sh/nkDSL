@@ -70,6 +70,21 @@ python -m pip install --upgrade pip
 python -m pip install nkdsl
 ```
 
+NetKet is the default compiled operator family. For neuraLQX, install
+`"nkDSL[neuralqx]"` and select its built-in target once:
+
+```python
+import nkdsl
+
+nkdsl.config.LOWERING = "neuralqx"
+```
+
+Subsequent `.compile()` calls use that choice. Custom operator families can
+be registered and selected with `nkdsl.LOWERING_REGISTRY.register(...)`.
+Per-call `operator_lowering=...` overrides remain available. See
+[choosing the compiled operator type](docs/compiler_operator_lowering_registry.md)
+for the complete workflow.
+
 ## Status
 
 `nkdsl` is a small, focused beta package for the symbolic operator work developed in neuraLQX. The goal is a clear, usable DSL with a stable core workflow and room for advanced APIs to continue maturing.

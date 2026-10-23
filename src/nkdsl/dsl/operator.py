@@ -1209,12 +1209,19 @@ class SymbolicDiscreteJaxOperator:
         self,
         *,
         backend: str = "jax",
-        operator_lowering: str = "netket_discrete_jax",
+        operator_lowering: str | None = None,
         deduplicate_connected_components: bool = True,
         cache: bool = True,
     ) -> Any:
         """
         Convenience shortcut: ``.build().compile(...)``.
+
+        Args:
+            backend: Backend target. Currently only ``"jax"`` is supported.
+            operator_lowering: Target name for this compilation, or ``None``
+                to use ``nkdsl.config.LOWERING``. Does not change the default.
+            deduplicate_connected_components: Whether to merge repeated targets.
+            cache: Whether to reuse in-process compiled artifacts.
 
         Returns:
             Executable compiled operator instance.

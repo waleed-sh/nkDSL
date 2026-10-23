@@ -41,6 +41,12 @@ Every call to `globally` or `for_each*` seals the current term and starts a new 
 
 Calling `compile()` on the builder is equivalent to `build().compile()`.
 
+The compiled operator family follows `nkdsl.config.LOWERING`. NetKet is the
+default, and `"neuralqx"` selects the built-in neuraLQX target. Set the default
+once for a script or pass `operator_lowering="netket"` for one compilation.
+See [choosing the compiled operator type](../compiler_operator_lowering_registry.md)
+for installation and custom targets.
+
 ### Connectivity semantics
 
 By default, `compile()` enables connected-state deduplication:

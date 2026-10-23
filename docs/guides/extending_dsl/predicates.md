@@ -39,6 +39,11 @@ Optional but recommended:
 
 ## Name resolution rules
 
+Registering the same name again emits `nkdsl.RegistrationWarning` and keeps
+the existing implementation. This makes repeated setup cells safe to run.
+Pass `replace=True` to install the new definition. The examples below use
+explicit replacement so edits take effect when you rerun them.
+
 If you set `clause_name`, that name is used for the fluent method. Otherwise nkDSL derives a name from the class name.
 
 Names must satisfy all of the following:

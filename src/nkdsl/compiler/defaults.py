@@ -53,7 +53,12 @@ from nkdsl.compiler.passes.connectivity_cost import SymbolicConnectivityCostPass
 
 # Module-level shared in-memory store (one per process)
 _DEFAULT_STORE: InMemorySymbolicArtifactStore | None = None
-_DEFAULT_OPERATOR_LOWERING_REGISTRY: SymbolicOperatorLoweringRegistry | None = None
+_DEFAULT_OPERATOR_LOWERING_REGISTRY = build_default_symbolic_operator_lowering_registry(
+    default_from_config=True
+)
+
+LOWERING_REGISTRY = _DEFAULT_OPERATOR_LOWERING_REGISTRY
+"""Shared lowering registry. New registrations become the configured default."""
 
 
 def default_symbolic_pass_pipeline() -> SymbolicPassPipeline:
@@ -110,7 +115,11 @@ def default_symbolic_lowerer_registry(
     Returns:
         Configured :class:`~nkdsl.compiler.lowering.registry.SymbolicLowererRegistry`.
     """
-    resolved_targets = operator_lowering_registry or default_symbolic_operator_lowering_registry()
+    resolved_targets = (
+        operator_lowering_registry
+        if operator_lowering_registry is not None
+        else default_symbolic_operator_lowering_registry()
+    )
     registry = SymbolicLowererRegistry()
     registry.register(
         JAXSymbolicLowerer(
@@ -124,12 +133,10 @@ def default_symbolic_operator_lowering_registry() -> SymbolicOperatorLoweringReg
     """
     Returns the module-level shared operator-lowering target registry.
 
-    The default registry contains the NetKet discrete JAX target
-    (``"netket_discrete_jax"`` -> ``DiscreteJaxOperator.get_conn_padded``).
+    This is the same object as :data:`nkdsl.LOWERING_REGISTRY`. It provides
+    NetKet and optional neuraLQX targets and follows ``nkdsl.config.LOWERING``.
+    Registering a custom target selects it unless ``set_default=False``.
     """
-    global _DEFAULT_OPERATOR_LOWERING_REGISTRY  # noqa: PLW0603
-    if _DEFAULT_OPERATOR_LOWERING_REGISTRY is None:
-        _DEFAULT_OPERATOR_LOWERING_REGISTRY = build_default_symbolic_operator_lowering_registry()
     return _DEFAULT_OPERATOR_LOWERING_REGISTRY
 
 
@@ -152,18 +159,26 @@ def default_symbolic_artifact_store() -> InMemorySymbolicArtifactStore:
 
 def reset_default_symbolic_singletons() -> None:
     """
-    Resets module-level default singleton instances.
+    Resets the shared artifact store, registered targets, and lowering override.
 
     This helper primarily exists for tests that need deterministic singleton
-    lifecycle behavior across cases.
+    lifecycle behavior across cases. The public registry keeps its identity.
     """
     global _DEFAULT_STORE  # noqa: PLW0603
-    global _DEFAULT_OPERATOR_LOWERING_REGISTRY  # noqa: PLW0603
     _DEFAULT_STORE = None
-    _DEFAULT_OPERATOR_LOWERING_REGISTRY = None
+    replacement = build_default_symbolic_operator_lowering_registry(default_from_config=True)
+    registry = _DEFAULT_OPERATOR_LOWERING_REGISTRY
+    with registry._lock:
+        registry._targets = replacement._targets
+        registry._lazy_targets = replacement._lazy_targets
+        registry._default_target = replacement._default_target
+    from nkdsl.configs import cfg
+
+    cfg.clear_override("LOWERING")
 
 
 __all__ = [
+    "LOWERING_REGISTRY",
     "default_symbolic_pass_pipeline",
     "default_symbolic_lowerer_registry",
     "default_symbolic_operator_lowering_registry",

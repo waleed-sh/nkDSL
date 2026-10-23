@@ -33,6 +33,7 @@ import logging
 import os
 import sys
 import threading
+import warnings
 
 from dataclasses import dataclass
 from dataclasses import replace
@@ -50,6 +51,8 @@ from typing import Sequence
 from typing import TextIO
 from typing import TypeVar
 from typing import cast
+
+from nkdsl.warnings import LoweringWarning
 
 T = TypeVar("T")
 
@@ -368,6 +371,18 @@ def parse_optional_string(value: Any) -> str | None:
             return None
         return trimmed
     raise ConfigValidationError(f"Cannot parse optional string from value {value!r}.")
+
+
+def parse_lowering(value: Any) -> str:
+    """Parses a nonempty built-in or custom operator-lowering name."""
+    if not isinstance(value, str) or not value.strip():
+        raise ConfigValidationError("LOWERING must be a non-empty string.")
+    normalized = value.strip()
+    if normalized.lower() in {"netket", "netket_discrete_jax"}:
+        return "netket"
+    if normalized.lower() == "neuralqx":
+        return "neuralqx"
+    return normalized
 
 
 def parse_csv_tuple(value: Any) -> tuple[str, ...]:
@@ -1151,6 +1166,11 @@ class ConfigManager:
 
             self._assert_can_mutate_globally(spec)
             old_value = self.get(name, thread_local=False)
+            reassigned_lowering = (
+                name == "LOWERING"
+                and source is ConfigSource.USER
+                and state.user_override is not UNSET
+            )
             state.user_override = parsed
 
             # keep os.environ in sync with the canonical casing
@@ -1164,6 +1184,14 @@ class ConfigManager:
                 thread_local=False,
                 mutability=spec.mutability,
             )
+            if reassigned_lowering:
+                warnings.warn(
+                    f"Default operator lowering was already set to {old_value!r}. "
+                    f"Using {new_value!r} for subsequent compilations. "
+                    "Previously compiled operators keep their original type.",
+                    LoweringWarning,
+                    stacklevel=3,
+                )
             return new_value
 
     def update(
@@ -1671,6 +1699,19 @@ class ConfigManager:
 
     def _register_default_configs(self) -> None:
         """Registers the minimal nkdsl option set."""
+        self.define_option(
+            "LOWERING",
+            default="netket",
+            doc=(
+                "Default compiled-operator target. Built-in targets are netket and neuralqx. "
+                "Custom names are resolved through LOWERING_REGISTRY at compilation time."
+            ),
+            value_type=str,
+            parser=parse_lowering,
+            env_default=("NKDSL_LOWERING",),
+            role="compilation",
+            mutability=ConfigMutability.RUNTIME,
+        )
         self.define_bool(
             "EXPERIMENTAL",
             default=False,

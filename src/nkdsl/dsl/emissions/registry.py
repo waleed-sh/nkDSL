@@ -18,11 +18,13 @@
 from __future__ import annotations
 
 import threading
+import warnings
 from collections.abc import Callable
 from typing import overload
 from typing import TYPE_CHECKING
 
 from nkdsl.dsl._clause_naming import normalize_clause_method_name
+from nkdsl.warnings import RegistrationWarning
 
 if TYPE_CHECKING:
     from nkdsl.dsl.emissions.abstractions import AbstractEmissionClause
@@ -92,16 +94,18 @@ def register_emission_clause(
         clause_cls: Clause class to register. When ``None``, returns a decorator.
         name: Optional explicit fluent method name override.
         replace: Whether to replace an existing clause under the same name.
+            Otherwise, a duplicate emits :class:`nkdsl.RegistrationWarning`
+            and keeps the existing implementation.
 
     Returns:
         type[AbstractEmissionClause] | Callable[..., type[AbstractEmissionClause]]:
-            Registered class directly, or a class decorator.
+            Provided class directly, or a class decorator. A duplicate keeps
+            the existing registry entry without changing the provided class.
 
     Raises:
         TypeError: If the provided class does not inherit from
             :class:`AbstractEmissionClause`.
-        ValueError: If the method name is invalid or already exists and
-            ``replace`` is ``False``.
+        ValueError: If the method name is invalid.
     """
 
     def _decorator(cls: type["AbstractEmissionClause"]) -> type["AbstractEmissionClause"]:
@@ -112,10 +116,14 @@ def register_emission_clause(
         resolved_name = normalize_clause_method_name(name or cls.method_name())
         with _REGISTRY_LOCK:
             if resolved_name in _EMISSION_CLAUSES and not replace:
-                raise ValueError(
+                warnings.warn(
                     f"Emission clause {resolved_name!r} is already registered. "
-                    "Use replace=True to overwrite."
+                    "Keeping the existing implementation. "
+                    "Use replace=True to use the new implementation.",
+                    RegistrationWarning,
+                    stacklevel=3,
                 )
+                return cls
             cls.clause_name = resolved_name
             _EMISSION_CLAUSES[resolved_name] = cls
         return cls

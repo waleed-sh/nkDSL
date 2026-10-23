@@ -18,13 +18,46 @@
 from __future__ import annotations
 
 import dataclasses
+import threading
+import warnings
+from collections.abc import Callable
 from typing import Any
 
 from netket.operator import DiscreteJaxOperator
 
 from nkdsl.debug import event as debug_event
+from nkdsl.configs import cfg
+from nkdsl.warnings import RegistrationWarning
 
 DEFAULT_SYMBOLIC_OPERATOR_LOWERING: str = "netket_discrete_jax"
+
+
+def _normalize_target_name(name: str) -> str:
+    """Normalizes built-in aliases while preserving custom target names."""
+    normalized = str(name).strip()
+    if normalized.lower() in {"netket", DEFAULT_SYMBOLIC_OPERATOR_LOWERING}:
+        return DEFAULT_SYMBOLIC_OPERATOR_LOWERING
+    if normalized.lower() == "neuralqx":
+        return "neuralqx"
+    return normalized
+
+
+def _neuralqx_target() -> SymbolicOperatorLoweringTarget:
+    """Loads the optional neuraLQX target only when it is selected."""
+    try:
+        from neuralqx.operators.types import ComputationalJaxOperator
+    except ModuleNotFoundError as exc:
+        if exc.name != "neuralqx":
+            raise
+        raise ImportError(
+            "The 'neuralqx' lowering requires neuraLQX. "
+            'Install it with pip install "nkdsl[neuralqx]".'
+        ) from exc
+    return SymbolicOperatorLoweringTarget(
+        name="neuralqx",
+        operator_type=ComputationalJaxOperator,
+        connection_method="_get_conn_padded",
+    )
 
 
 @dataclasses.dataclass(frozen=True, repr=False)
@@ -44,7 +77,7 @@ class SymbolicOperatorLoweringTarget:
     connection_method: str
 
     def __post_init__(self) -> None:
-        normalized_name = str(self.name).strip()
+        normalized_name = _normalize_target_name(self.name)
         if not normalized_name:
             raise ValueError("Lowering target name must be a non-empty string.")
         if not isinstance(self.operator_type, type):
@@ -64,6 +97,16 @@ class SymbolicOperatorLoweringTarget:
         """Fully qualified import path for the operator class."""
         return f"{self.operator_type.__module__}.{self.operator_type.__qualname__}"
 
+    @property
+    def cache_signature(self) -> tuple:
+        """Identifies the target class and entry point for in-process caching."""
+        return (
+            self.name,
+            self.operator_type_qualname,
+            self.connection_method,
+            id(self.operator_type),
+        )
+
     def __repr__(self) -> str:
         return (
             f"SymbolicOperatorLoweringTarget("
@@ -80,6 +123,14 @@ class SymbolicOperatorLoweringRegistry:
     A target maps a public lowering name (for example
     ``"netket_discrete_jax"``) to an operator class and the method that
     should host the generated connectivity kernel.
+
+    Args:
+        targets: Initial target descriptors.
+        default_target: Initial default target name.
+        default_from_config: Whether defaults follow ``nkdsl.config.LOWERING``.
+            The shared :data:`nkdsl.LOWERING_REGISTRY` enables this behavior and
+            selects newly registered targets by default. Independent registries
+            retain their own default unless ``set_default=True`` is supplied.
     """
 
     def __init__(
@@ -87,12 +138,16 @@ class SymbolicOperatorLoweringRegistry:
         targets: list[SymbolicOperatorLoweringTarget] | None = None,
         *,
         default_target: str | None = None,
+        default_from_config: bool = False,
     ) -> None:
+        self._lock = threading.RLock()
         self._targets: dict[str, SymbolicOperatorLoweringTarget] = {}
+        self._lazy_targets: dict[str, Callable[[], SymbolicOperatorLoweringTarget]] = {}
         self._default_target: str | None = None
+        self._default_from_config = bool(default_from_config)
 
         for target in targets or ():
-            self.register_target(target)
+            self.register_target(target, set_default=False)
 
         if default_target is not None:
             self.set_default(default_target)
@@ -104,7 +159,7 @@ class SymbolicOperatorLoweringRegistry:
         target: SymbolicOperatorLoweringTarget,
         *,
         replace: bool = False,
-        set_default: bool = False,
+        set_default: bool | None = None,
     ) -> None:
         """
         Registers one lowering target.
@@ -112,20 +167,33 @@ class SymbolicOperatorLoweringRegistry:
         Args:
             target: Target descriptor.
             replace: Whether to replace an existing target with the same name.
-            set_default: Whether this target becomes the default target.
+                Otherwise, a duplicate emits :class:`nkdsl.RegistrationWarning`
+                and keeps both the existing target and the current default.
+            set_default: Whether this target becomes the default. ``None``
+                selects new targets in the shared registry and leaves the
+                default unchanged in independent registries.
         """
         if not isinstance(target, SymbolicOperatorLoweringTarget):
             raise TypeError(
                 "target must be a SymbolicOperatorLoweringTarget, " f"got {type(target)!r}."
             )
-        if target.name in self._targets and not replace:
-            raise ValueError(
-                f"Lowering target {target.name!r} is already registered. "
-                "Use replace=True to overwrite."
-            )
-        self._targets[target.name] = target
-        if self._default_target is None or set_default:
-            self._default_target = target.name
+        with self._lock:
+            if target.name in self.target_names and not replace:
+                warnings.warn(
+                    f"Lowering target {target.name!r} is already registered. "
+                    "Keeping the existing target and default. "
+                    "Use replace=True to use the new implementation.",
+                    RegistrationWarning,
+                    stacklevel=3,
+                )
+                return
+            self._targets[target.name] = target
+            self._lazy_targets.pop(target.name, None)
+            if self._default_target is None:
+                self._default_target = target.name
+            select_default = self._default_from_config if set_default is None else set_default
+            if select_default:
+                self.set_default(target.name)
         debug_event(
             "registered operator lowering target",
             scope="lowering",
@@ -133,7 +201,7 @@ class SymbolicOperatorLoweringRegistry:
             target_name=target.name,
             operator_type=target.operator_type_qualname,
             connection_method=target.connection_method,
-            set_default=bool(set_default),
+            set_default=bool(select_default),
         )
 
     def register(
@@ -143,9 +211,20 @@ class SymbolicOperatorLoweringRegistry:
         operator_type: type[Any],
         connection_method: str,
         replace: bool = False,
-        set_default: bool = False,
+        set_default: bool | None = None,
     ) -> None:
-        """Convenience wrapper around :meth:`register_target`."""
+        """Registers a target and selects it by default in the shared registry.
+
+        Args:
+            name: Unique target name.
+            operator_type: Operator base class used by the generated wrapper.
+            connection_method: Method receiving the compiled connectivity kernel.
+            replace: Whether an existing implementation should be replaced.
+                Otherwise, duplicates warn and keep the existing registration.
+            set_default: Whether to select this target for later compilations.
+                Defaults to ``True`` for :data:`nkdsl.LOWERING_REGISTRY` and
+                ``False`` for independent registries.
+        """
         self.register_target(
             SymbolicOperatorLoweringTarget(
                 name=name,
@@ -157,14 +236,25 @@ class SymbolicOperatorLoweringRegistry:
         )
 
     def set_default(self, name: str) -> None:
-        """Sets the default target name used by :meth:`resolve`."""
-        normalized = str(name).strip()
-        if normalized not in self._targets:
-            raise KeyError(
-                f"Unknown lowering target {normalized!r}. "
-                f"Available targets: {sorted(self._targets)!r}."
-            )
-        self._default_target = normalized
+        """Selects a registered target, synchronizing the shared configuration.
+
+        Selecting a default again is allowed. The shared registry emits
+        :class:`nkdsl.LoweringWarning` when a script assigns its default again.
+        Optional dependencies are loaded when the target is resolved.
+        """
+        normalized = _normalize_target_name(name)
+        with self._lock:
+            if normalized not in self.target_names:
+                raise KeyError(
+                    f"Unknown lowering target {normalized!r}. "
+                    f"Available targets: {list(self.target_names)!r}."
+                )
+            if self._default_from_config:
+                cfg.LOWERING = (
+                    "netket" if normalized == DEFAULT_SYMBOLIC_OPERATOR_LOWERING else normalized
+                )
+            else:
+                self._default_target = normalized
         debug_event(
             "set default operator lowering target",
             scope="lowering",
@@ -186,54 +276,69 @@ class SymbolicOperatorLoweringRegistry:
             RuntimeError: If no targets are registered.
             KeyError: If *name* does not exist in the registry.
         """
-        if not self._targets:
-            raise RuntimeError("No symbolic operator lowering targets are registered.")
-
-        target_name = self._default_target if name is None else str(name).strip()
-        if not target_name:
-            raise ValueError("Lowering target name must be a non-empty string.")
-        target = self._targets.get(target_name)
-        if target is None:
-            raise KeyError(
-                f"Unknown lowering target {target_name!r}. "
-                f"Available targets: {sorted(self._targets)!r}."
-            )
-        return target
+        with self._lock:
+            if not self.target_names:
+                raise RuntimeError("No symbolic operator lowering targets are registered.")
+            target_name = self.default_target if name is None else _normalize_target_name(name)
+            if not target_name:
+                raise ValueError("Lowering target name must be a non-empty string.")
+            target = self._targets.get(target_name)
+            if target is None and target_name in self._lazy_targets:
+                target = self._lazy_targets[target_name]()
+                self._targets[target_name] = target
+            if target is None:
+                raise KeyError(
+                    f"Unknown lowering target {target_name!r}. "
+                    f"Available targets: {list(self.target_names)!r}."
+                )
+            return target
 
     @property
     def default_target(self) -> str | None:
         """Returns the configured default target name."""
+        if self._default_from_config:
+            return _normalize_target_name(cfg.LOWERING)
         return self._default_target
 
     @property
     def target_names(self) -> tuple[str, ...]:
         """Returns target names sorted lexicographically."""
-        return tuple(sorted(self._targets))
+        with self._lock:
+            return tuple(sorted(self._targets.keys() | self._lazy_targets.keys()))
 
     def __len__(self) -> int:
-        return len(self._targets)
+        return len(self.target_names)
 
     def __repr__(self) -> str:
         return (
             f"SymbolicOperatorLoweringRegistry("
-            f"default_target={self._default_target!r}, "
+            f"default_target={self.default_target!r}, "
             f"targets={self.target_names!r})"
         )
 
 
-def build_default_symbolic_operator_lowering_registry() -> SymbolicOperatorLoweringRegistry:
+def build_default_symbolic_operator_lowering_registry(
+    *, default_from_config: bool = False
+) -> SymbolicOperatorLoweringRegistry:
     """
-    Builds a registry with the default NetKet discrete JAX target.
+    Builds a registry with NetKet and optional neuraLQX JAX targets.
 
-    The default lowering target name is :data:`DEFAULT_SYMBOLIC_OPERATOR_LOWERING`.
+    NetKet accepts both ``"netket"`` and the legacy name
+    :data:`DEFAULT_SYMBOLIC_OPERATOR_LOWERING`. The ``"neuralqx"`` target
+    imports neuraLQX only when selected for compilation.
+
+    Args:
+        default_from_config: Whether the registry follows ``config.LOWERING``
+            and selects newly registered custom targets automatically.
     """
-    registry = SymbolicOperatorLoweringRegistry()
+    registry = SymbolicOperatorLoweringRegistry(default_from_config=default_from_config)
     registry.register(
         name=DEFAULT_SYMBOLIC_OPERATOR_LOWERING,
         operator_type=DiscreteJaxOperator,
         connection_method="get_conn_padded",
-        set_default=True,
+        set_default=False,
     )
+    registry._lazy_targets["neuralqx"] = _neuralqx_target
     return registry
 
 

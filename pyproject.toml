@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "nkDSL"
 dynamic = ["version"]
-description = "Symbolic operator DSL for NetKet discrete JAX operators"
+description = "Symbolic operator DSL for NetKet and neuraLQX JAX operators"
 readme = "README.md"
 requires-python = ">=3.11,<3.14"
 license = { file = "LICENSE" }
@@ -31,6 +31,9 @@ Issues = "https://www.github.com/waleed-sh/nkDSL/issues"
 Documentation = "https://nkdsl.readthedocs.io/en/latest/"
 
 [project.optional-dependencies]
+neuralqx = [
+  "neuralqx>=1.1.2",
+]
 docs = [
   "mkdocs==1.6.1",
   "mkdocs-material==9.7.7",

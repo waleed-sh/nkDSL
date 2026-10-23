@@ -118,7 +118,7 @@ def test_operator_lowering_registry_register_replace_and_resolve():
     assert registry.default_target == "alpha"
     assert registry.resolve().name == "alpha"
 
-    with pytest.raises(ValueError, match="already registered"):
+    with pytest.warns(nkdsl.RegistrationWarning, match="already registered"):
         registry.register(name="alpha", operator_type=dict, connection_method="run")
 
     registry.register(
@@ -357,6 +357,7 @@ def test_dsl_builder_compile_forwards_operator_lowering_selection():
         operator_type=_BuilderComputationalLikeOperator,
         connection_method="_get_conn_padded",
         replace=True,
+        set_default=False,
     )
 
     hi = nk.hilbert.Fock(n_max=2, N=1)

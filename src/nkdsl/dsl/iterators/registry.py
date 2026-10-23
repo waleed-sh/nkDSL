@@ -18,11 +18,13 @@
 from __future__ import annotations
 
 import threading
+import warnings
 from collections.abc import Callable
 from typing import overload
 from typing import TYPE_CHECKING
 
 from nkdsl.dsl._clause_naming import normalize_clause_method_name
+from nkdsl.warnings import RegistrationWarning
 
 if TYPE_CHECKING:
     from nkdsl.dsl.iterators.abstractions import AbstractIteratorClause
@@ -92,16 +94,18 @@ def register_iterator_clause(
         clause_cls: Clause class to register. When ``None``, returns a decorator.
         name: Optional explicit fluent method name override.
         replace: Whether to replace an existing clause under the same name.
+            Otherwise, a duplicate emits :class:`nkdsl.RegistrationWarning`
+            and keeps the existing implementation.
 
     Returns:
         type[AbstractIteratorClause] | Callable[..., type[AbstractIteratorClause]]:
-            Registered class directly, or a class decorator.
+            Provided class directly, or a class decorator. A duplicate keeps
+            the existing registry entry without changing the provided class.
 
     Raises:
         TypeError: If the provided class does not inherit from
             :class:`AbstractIteratorClause`.
-        ValueError: If the method name is invalid or already exists and
-            ``replace`` is ``False``.
+        ValueError: If the method name is invalid.
     """
 
     def _decorator(cls: type["AbstractIteratorClause"]) -> type["AbstractIteratorClause"]:
@@ -112,10 +116,14 @@ def register_iterator_clause(
         resolved_name = normalize_clause_method_name(name or cls.method_name())
         with _REGISTRY_LOCK:
             if resolved_name in _ITERATOR_CLAUSES and not replace:
-                raise ValueError(
+                warnings.warn(
                     f"Iterator clause {resolved_name!r} is already registered. "
-                    "Use replace=True to overwrite."
+                    "Keeping the existing implementation. "
+                    "Use replace=True to use the new implementation.",
+                    RegistrationWarning,
+                    stacklevel=3,
                 )
+                return cls
             cls.clause_name = resolved_name
             _ITERATOR_CLAUSES[resolved_name] = cls
         return cls

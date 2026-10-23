@@ -800,9 +800,11 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
 
     def lower(self, context: SymbolicCompilationContext) -> SymbolicCompiledArtifact:
         ir = context.ir
-        lowering_target = self._operator_lowering_registry.resolve(
-            context.options.operator_lowering
-        )
+        lowering_target = context.analysis("operator_lowering_target")
+        if lowering_target is None:
+            lowering_target = self._operator_lowering_registry.resolve(
+                context.options.operator_lowering
+            )
         debug_event(
             "starting jax lowering",
             scope="lowering",

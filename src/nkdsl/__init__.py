@@ -14,7 +14,7 @@
 
 
 """
-Symbolic operator subsystem for NetKet.
+Symbolic operators for NetKet and neuraLQX.
 
 Typical workflow::
 
@@ -105,6 +105,7 @@ from nkdsl.compiler import (
 from nkdsl.compiler import (
     default_symbolic_pass_pipeline,
 )
+from nkdsl.compiler.defaults import LOWERING_REGISTRY
 
 #
 #
@@ -132,11 +133,17 @@ from nkdsl.errors import SymbolicDiagnosticsError
 from nkdsl.errors import SymbolicError
 from nkdsl.errors import SymbolicOperatorError
 from nkdsl.errors import SymbolicOperatorExecutionError
+from nkdsl.warnings import NKDSLWarning
+from nkdsl.warnings import LoweringWarning
+from nkdsl.warnings import RegistrationWarning
 
 #
 #
 #   Config
 from nkdsl.configs import cfg
+
+config = cfg
+"""Runtime configuration. Alias of :data:`cfg`, including ``LOWERING``."""
 
 __all__ = [
     # Primary API
@@ -189,6 +196,7 @@ __all__ = [
     "DEFAULT_SYMBOLIC_OPERATOR_LOWERING",
     "SymbolicOperatorLoweringRegistry",
     "SymbolicOperatorLoweringTarget",
+    "LOWERING_REGISTRY",
     # IR
     "SymbolicOperatorIR",
     "SymbolicIRTerm",
@@ -208,6 +216,10 @@ __all__ = [
     "SymbolicCompilationError",
     "SymbolicCompilerError",
     "SymbolicDiagnosticsError",
+    "NKDSLWarning",
+    "LoweringWarning",
+    "RegistrationWarning",
     # Configs
     "cfg",
+    "config",
 ]

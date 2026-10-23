@@ -23,7 +23,6 @@ from typing import Any
 
 _VALID_BACKENDS: frozenset[str] = frozenset({"jax", "auto"})
 _DEFAULT_CACHE_NAMESPACE: str = "nqx_symbolic_v1"
-_DEFAULT_OPERATOR_LOWERING: str = "netket_discrete_jax"
 
 
 @dataclasses.dataclass(frozen=True, repr=False)
@@ -43,6 +42,7 @@ class SymbolicCompilerOptions:
         cache_enabled: Whether compiled artifacts are cached in-process.
         cache_namespace: Namespace string used in cache-key generation.
         operator_lowering: Registry key selecting the compiled-operator target.
+            ``None`` inherits the compiler or registry default on each compilation.
         diagnostics_enabled: Whether DSL diagnostics pass is enabled.
         diagnostics_min_severity: Minimum severity shown/enforced by diagnostics
             (``"info"``, ``"warning"``, ``"error"``).
@@ -63,7 +63,7 @@ class SymbolicCompilerOptions:
     strict_validation: bool = True
     cache_enabled: bool = True
     cache_namespace: str = _DEFAULT_CACHE_NAMESPACE
-    operator_lowering: str = _DEFAULT_OPERATOR_LOWERING
+    operator_lowering: str | None = None
     diagnostics_enabled: bool = True
     diagnostics_min_severity: str = "warning"
     fail_on_warnings: bool = False
@@ -81,7 +81,9 @@ class SymbolicCompilerOptions:
             )
         if not self.cache_namespace.strip():
             raise ValueError("cache_namespace must be a non-empty string.")
-        if not self.operator_lowering.strip():
+        if self.operator_lowering is not None and (
+            not isinstance(self.operator_lowering, str) or not self.operator_lowering.strip()
+        ):
             raise ValueError("operator_lowering must be a non-empty string.")
         normalized_severity = str(self.diagnostics_min_severity).strip().lower()
         if normalized_severity not in {"info", "warning", "error"}:
@@ -109,7 +111,7 @@ class SymbolicCompilerOptions:
         strict_validation: bool = True,
         cache_enabled: bool = True,
         cache_namespace: str = _DEFAULT_CACHE_NAMESPACE,
-        operator_lowering: str = _DEFAULT_OPERATOR_LOWERING,
+        operator_lowering: str | None = None,
         diagnostics_enabled: bool = True,
         diagnostics_min_severity: str = "warning",
         fail_on_warnings: bool = False,

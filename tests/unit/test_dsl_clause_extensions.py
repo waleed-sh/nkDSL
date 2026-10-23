@@ -180,7 +180,7 @@ def test_registration_conflict_and_replace_behaviour():
             return (str(label),), tuple((k,) for k in range(n))
 
     register_iterator_clause(ReplaceableIteratorClauseV1, replace=True)
-    with pytest.raises(ValueError, match="already registered"):
+    with pytest.warns(nkdsl.RegistrationWarning, match="already registered"):
         register_iterator_clause(ReplaceableIteratorClauseV2)
 
     register_iterator_clause(ReplaceableIteratorClauseV2, replace=True)
@@ -342,7 +342,7 @@ def test_predicate_conflict_unknown_apply_and_globals_guard_paths():
             return False
 
     register_predicate_clause(ConflictPredicateV1, replace=True)
-    with pytest.raises(ValueError, match="already registered"):
+    with pytest.warns(nkdsl.RegistrationWarning, match="already registered"):
         register_predicate_clause(ConflictPredicateV2)
 
     hi = _small_hi()

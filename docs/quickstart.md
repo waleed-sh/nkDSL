@@ -9,6 +9,19 @@ dependencies are installed with it:
 python -m pip install nkDSL
 ```
 
+NetKet is the default compiled operator family. To use neuraLQX instead,
+install `"nkDSL[neuralqx]"` and select it once near the start of your script:
+
+```python
+import nkdsl
+
+nkdsl.config.LOWERING = "neuralqx"
+```
+
+Later `.compile()` calls use this choice automatically. See
+[choosing the compiled operator type](compiler_operator_lowering_registry.md)
+for custom targets, per-call overrides, and changing the default.
+
 For editable development installs:
 
 ```bash

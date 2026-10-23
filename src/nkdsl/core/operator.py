@@ -190,16 +190,18 @@ class SymbolicOperator(AbstractSymbolicOperator):
         self,
         *,
         backend: str = "jax",
-        operator_lowering: str = "netket_discrete_jax",
+        operator_lowering: str | None = None,
         deduplicate_connected_components: bool = True,
         cache: bool = True,
         compiler: Any = None,
     ) -> Any:  # -> CompiledOperator
-        """Lowers this symbolic operator to an executable :class:`~nkdsl.core.compiled.CompiledOperator`.
+        """Lowers this symbolic operator to the selected executable operator family.
 
         Args:
             backend: Backend target (currently only ``"jax"`` is supported).
-            operator_lowering: Registered operator-lowering target name.
+            operator_lowering: Registered target name for this invocation.
+                ``None`` uses the compiler default or ``nkdsl.config.LOWERING``.
+                An explicit name does not change the default.
             deduplicate_connected_components: Whether to merge duplicate
                 connected states and drop zero matrix elements. Static analysis
                 derives the output capacity and plans residual runtime checks.
@@ -208,7 +210,7 @@ class SymbolicOperator(AbstractSymbolicOperator):
                 instance.  When ``None`` the module-level shared compiler is used.
 
         Returns:
-            Executable :class:`~nkdsl.core.compiled.CompiledOperator`.
+            Executable operator instance for the selected lowering target.
         """
         from nkdsl.compiler.compiler import (
             SymbolicCompiler,
@@ -235,6 +237,12 @@ class SymbolicOperator(AbstractSymbolicOperator):
             deduplicate_connected_components=deduplicate_connected_components,
             cache=cache,
         )
+        if compiler is not None and operator_lowering is not None:
+            from dataclasses import replace
+
+            return c.compile_operator(
+                self, options=replace(c.options, operator_lowering=operator_lowering)
+            )
         return c.compile_operator(self)
 
     def _apply_scalar(self, scalar: "int | float | complex") -> "SymbolicOperator":

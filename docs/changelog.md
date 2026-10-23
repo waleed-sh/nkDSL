@@ -2,13 +2,29 @@
 
 ## Unreleased
 
+### New features
+
+- Added `nkdsl.config.LOWERING` and `NKDSL_LOWERING` to choose the default
+  compiled operator family. NetKet and optional neuraLQX targets are built in.
+- Added `nkdsl.LOWERING_REGISTRY` for custom targets. A new shared registration
+  selects its target automatically unless `set_default=False` is supplied.
+  Per-call overrides remain available, and defaults can change during a run.
+
 ### Improvements
 
+- Reassigning the default lowering now emits `LoweringWarning` and applies
+  the new choice. Duplicate lowering and DSL extension registrations emit
+  `RegistrationWarning` and retain the existing implementation unless
+  `replace=True` is supplied.
+- Lowering defaults resolve on each compilation. Cache entries distinguish
+  target classes and kernel entry points, including replaced registrations.
 - Added static connectivity assembly planning with target value numbering, bounded collision proofs, reduced output capacities, and finite-image bounds. Unresolved collisions use exact packed keys and an adaptive direct-workspace, pairwise, or single-sort algorithm. Distinct targets avoid runtime uniqueness operations.
 - Added [`nkdsl.compiler.passes.connectivity_cost.SymbolicConnectivityCostPass`](api/generated/nkdsl.compiler.passes.connectivity_cost.md#nkdsl.compiler.passes.connectivity_cost.SymbolicConnectivityCostPass) and `NKDSL-W401` to report estimated deduplication assembly overhead. Added reproducible before/after benchmarks across nine operator families.
 
 ### Backwards incompatible changes
 
+- New targets registered in the shared lowering registry become the default.
+  Pass `set_default=False` to register without changing the current selection.
 - With deduplication enabled, compiled `max_conn_size` and padded connection shapes now use the proven unique-target capacity instead of the raw branch count. Code that assumes the raw padded width should use `max_conn_size` from the compiled operator or disable deduplication explicitly.
 
 ### Bug fixes

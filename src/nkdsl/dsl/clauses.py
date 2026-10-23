@@ -67,18 +67,19 @@ def register(
     replace: bool = False,
 ) -> type[Any] | Callable[[type[Any]], type[Any]]:
     """
-    Registers either an iterator clause, predicate clause or an emission clause class.
+    Registers an iterator, predicate, or emission clause class.
 
     Args:
         clause_cls: Clause class to register. When ``None``, returns a decorator.
         name: Optional explicit fluent method name override.
         replace: Whether to replace an existing clause under the same name.
+            Otherwise, duplicates warn and keep the existing implementation.
 
     Returns:
         type[Any] | Callable[[type[Any]], type[Any]]: Registered class or decorator.
 
     Raises:
-        TypeError: If *clause_cls* is not an iterator or predicate clause class.
+        TypeError: If *clause_cls* is not a supported clause class.
     """
 
     def _decorator(cls: type[Any]) -> type[Any]:

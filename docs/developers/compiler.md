@@ -138,8 +138,18 @@ input configurations.
 The operator lowering registry answers a separate question: which operator
 class and connection method should expose the generated function? The default
 target wraps it as a NetKet `DiscreteJaxOperator` with `get_conn_padded`.
-A different wrapper can use the same JAX backend. See the
-[registry guide](../compiler_operator_lowering_registry.md) for registration.
+`config.LOWERING = "neuralqx"` selects the built-in optional neuraLQX wrapper,
+which implements `_get_conn_padded`. Custom targets use the same JAX backend.
+See the [registry guide](../compiler_operator_lowering_registry.md) for selection
+and registration.
+
+An omitted target remains unresolved in compiler options until compilation.
+The compiler resolves and binds one target before running passes, so a
+configuration change during a pass cannot change the wrapper halfway through
+that invocation. The cache key includes the resolved target name, connection
+method, qualified class name, and class identity. Class identity is appropriate
+for this in-process store and distinguishes redefined classes that share a
+module and name. The lowerer consumes the bound descriptor on a cache miss.
 
 The compiler packages the executable operator, cache key, pass reports, and
 metadata into `SymbolicCompiledArtifact` and stores it when caching is enabled.

@@ -158,9 +158,11 @@ class CompiledOperator(_CompiledOperatorMixin, DiscreteJaxOperator):
     An executable operator produced by lowering a
     :class:`~nkdsl.core.operator.SymbolicOperator`.
 
-    ``CompiledOperator`` is the concrete result of ``symbolic_op.compile()``
-    or ``SymbolicDiscreteJaxOperator(...).compile()``. Its ``get_conn_padded`` kernel is a
-    pure JAX function that can be JIT-compiled, vmapped, and differentiated.
+    ``CompiledOperator`` is the result of ``symbolic_op.compile()`` or
+    ``SymbolicDiscreteJaxOperator(...).compile()`` when the selected target is
+    NetKet. Other targets return subclasses of their registered operator base.
+    Its ``get_conn_padded`` kernel is a pure JAX function that can be
+    JIT-compiled, vmapped, and differentiated.
 
     The class name is fixed and stable, it does not encode the operator name
     or structure. The readable operator name is available via the
