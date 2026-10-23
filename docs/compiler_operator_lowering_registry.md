@@ -28,6 +28,10 @@ For neuraLQX, first install the optional dependency:
 python -m pip install "nkDSL[neuralqx]"
 ```
 
+The extra selects NetKet `>=3.20.0,<3.22.0`, the range supported by neuraLQX.
+This avoids an import failure in neuraLQX 1.1.2 with newer NetKet releases.
+Base nkDSL installations keep their existing NetKet version range.
+
 Then select its built-in target:
 
 ```python

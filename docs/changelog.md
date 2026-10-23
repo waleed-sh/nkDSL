@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## nkDSL v0.1.3b0
 
 ### New features
 
@@ -29,6 +29,9 @@
 
 ### Bug fixes
 
+- Constrained NetKet to `>=3.20.0,<3.22.0` when installing the `neuralqx`
+  extra, preventing neuraLQX 1.1.2 from importing removed NetKet logging APIs.
+  Base installations retain support for newer NetKet versions.
 - Fixed equality and inequality against scalar values on amplitude expressions,
   including `site("e").index == edge_index` and `site("e").value == charge`.
   Expression-to-expression equality remains structural, preserving existing IR

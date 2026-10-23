@@ -71,7 +71,8 @@ python -m pip install nkdsl
 ```
 
 NetKet is the default compiled operator family. For neuraLQX, install
-`"nkDSL[neuralqx]"` and select its built-in target once:
+`"nkDSL[neuralqx]"`, which selects a compatible NetKet version
+(`>=3.20.0,<3.22.0`). Then select its built-in target once:
 
 ```python
 import nkdsl
