@@ -33,6 +33,7 @@ Documentation = "https://nkdsl.readthedocs.io/en/latest/"
 [project.optional-dependencies]
 neuralqx = [
   "neuralqx>=1.1.2",
+  "netket>=3.20.0,<3.22.0",
 ]
 docs = [
   "mkdocs==1.6.1",
