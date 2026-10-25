@@ -50,6 +50,7 @@ from nkdsl.compiler.passes.diagnostics import (
 )
 from nkdsl.compiler.passes.deduplication import SymbolicDeduplicationPass
 from nkdsl.compiler.passes.connectivity_cost import SymbolicConnectivityCostPass
+from nkdsl.compiler.passes.kernel_planning import SymbolicKernelPlanningPass
 
 # Module-level shared in-memory store (one per process)
 _DEFAULT_STORE: InMemorySymbolicArtifactStore | None = None
@@ -82,6 +83,8 @@ def default_symbolic_pass_pipeline() -> SymbolicPassPipeline:
            - reports estimated deduplication assembly overhead.
         4. :class:`~nkdsl.compiler.passes.fusion.SymbolicFusionPass`
            - groups terms into fusion-compatible clusters for the lowerer.
+        5. :class:`~nkdsl.compiler.passes.kernel_planning.SymbolicKernelPlanningPass`
+           - plans scalar DAG batches and deferred target coordinate generation.
 
     Returns:
         Configured :class:`~nkdsl.compiler.core.pipeline.SymbolicPassPipeline`.
@@ -97,6 +100,7 @@ def default_symbolic_pass_pipeline() -> SymbolicPassPipeline:
             SymbolicDeduplicationPass(),
             SymbolicConnectivityCostPass(),
             SymbolicFusionPass(),
+            SymbolicKernelPlanningPass(),
         ],
     )
 

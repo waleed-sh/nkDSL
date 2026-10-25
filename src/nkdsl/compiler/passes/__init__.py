@@ -36,6 +36,7 @@ from nkdsl.compiler.passes.fusion import (
 )
 from nkdsl.compiler.passes.deduplication import SymbolicDeduplicationPass
 from nkdsl.compiler.passes.connectivity_cost import SymbolicConnectivityCostPass
+from nkdsl.compiler.passes.kernel_planning import SymbolicKernelPlanningPass
 
 __all__ = [
     "AbstractSymbolicPass",
@@ -47,4 +48,5 @@ __all__ = [
     "SymbolicFusionPass",
     "SymbolicDeduplicationPass",
     "SymbolicConnectivityCostPass",
+    "SymbolicKernelPlanningPass",
 ]

@@ -37,7 +37,10 @@ class SymbolicCompilerOptions:
             should merge duplicate connected states and drop zero matrix elements.
             Static assembly analysis derives a reduced unique-target output bound
             and limits runtime checks to unresolved collisions.
-        enable_fusion: Whether fusion-planning passes are enabled.
+        optimize_kernels: Whether to plan structured scalar DAGs and direct target
+            construction. Disable to use the reference mutation-based lowerer.
+        enable_fusion: Whether compatible scalar expressions are batched during
+            kernel planning, and legacy fusion groups are recorded.
         strict_validation: Whether validation passes fail hard on errors.
         cache_enabled: Whether compiled artifacts are cached in-process.
         cache_namespace: Namespace string used in cache-key generation.
@@ -59,6 +62,7 @@ class SymbolicCompilerOptions:
 
     backend_preference: str = "auto"
     deduplicate_connected_components: bool = True
+    optimize_kernels: bool = dataclasses.field(default=True, kw_only=True)
     enable_fusion: bool = True
     strict_validation: bool = True
     cache_enabled: bool = True
@@ -107,6 +111,7 @@ class SymbolicCompilerOptions:
         *,
         backend_preference: str = "auto",
         deduplicate_connected_components: bool = True,
+        optimize_kernels: bool = True,
         enable_fusion: bool = True,
         strict_validation: bool = True,
         cache_enabled: bool = True,
@@ -130,6 +135,7 @@ class SymbolicCompilerOptions:
         return cls(
             backend_preference=backend_preference,
             deduplicate_connected_components=bool(deduplicate_connected_components),
+            optimize_kernels=bool(optimize_kernels),
             enable_fusion=bool(enable_fusion),
             strict_validation=bool(strict_validation),
             cache_enabled=bool(cache_enabled),
@@ -154,6 +160,7 @@ class SymbolicCompilerOptions:
         return (
             ("backend_preference", self.backend_preference),
             ("deduplicate_connected_components", int(self.deduplicate_connected_components)),
+            ("optimize_kernels", int(self.optimize_kernels)),
             ("enable_fusion", int(self.enable_fusion)),
             ("strict_validation", int(self.strict_validation)),
             ("cache_enabled", int(self.cache_enabled)),

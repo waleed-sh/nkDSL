@@ -895,18 +895,62 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
                 term_name=term.name,
             )
 
-        compiled_op = _build_compiled_operator(
-            hilbert=context.operator.hilbert,
-            operator_name=ir.operator_name,
-            is_hermitian=ir.is_hermitian,
-            output_dtype=output_dtype,
-            term_runners=term_runners,
-            total_padded_size=total_max_conn_size,
-            operator_type=lowering_target.operator_type,
-            connection_method=lowering_target.connection_method,
-            deduplicate_connected_components=context.options.deduplicate_connected_components,
-            deduplication_plan=deduplication_plan,
+        kernel_plan = context.analysis("kernel_plan")
+        kernel_summary = context.analysis(
+            "kernel_planning", default={"enabled": False, "fallback_reason": "not_planned"}
         )
+        if kernel_plan is not None and kernel_plan.fallback_reason is None:
+            from nkdsl.compiler.lowering.kernel_lowerer import (
+                make_kernel_function,
+                kernel_schedule_summary,
+            )
+
+            def reference_factory() -> Any:
+                return _build_compiled_operator(
+                    hilbert=context.operator.hilbert,
+                    operator_name=ir.operator_name,
+                    is_hermitian=ir.is_hermitian,
+                    output_dtype=output_dtype,
+                    term_runners=term_runners,
+                    total_padded_size=total_max_conn_size,
+                    deduplicate_connected_components=context.options.deduplicate_connected_components,
+                    deduplication_plan=deduplication_plan,
+                ).get_conn_padded
+
+            fn = make_kernel_function(
+                kernel_plan,
+                ir.hilbert_size,
+                output_dtype,
+                total_max_conn_size,
+                reference_factory=reference_factory,
+            )
+            compiled_op = create_compiled_operator(
+                context.operator.hilbert,
+                name=ir.operator_name,
+                fn=fn,
+                is_hermitian=ir.is_hermitian,
+                dtype=output_dtype,
+                max_conn_size=total_max_conn_size,
+                operator_type=lowering_target.operator_type,
+                connection_method=lowering_target.connection_method,
+            )
+            kernel_summary = {
+                **kernel_summary,
+                **kernel_schedule_summary(kernel_plan, ir.hilbert_size),
+            }
+        else:
+            compiled_op = _build_compiled_operator(
+                hilbert=context.operator.hilbert,
+                operator_name=ir.operator_name,
+                is_hermitian=ir.is_hermitian,
+                output_dtype=output_dtype,
+                term_runners=term_runners,
+                total_padded_size=total_max_conn_size,
+                operator_type=lowering_target.operator_type,
+                connection_method=lowering_target.connection_method,
+                deduplicate_connected_components=context.options.deduplicate_connected_components,
+                deduplication_plan=deduplication_plan,
+            )
 
         context.set_selected_lowerer(self._LOWERER_NAME)
         debug_event(
@@ -937,6 +981,7 @@ class JAXSymbolicLowerer(AbstractSymbolicLowerer):
                     deduplication_plan.as_dict() if deduplication_plan is not None else None
                 ),
                 "connectivity_cost": context.analysis("connectivity_cost"),
+                "kernel_planning": kernel_summary,
                 "dsl_diagnostics": context.analysis("dsl_diagnostics", default=()),
                 "operator_lowering": lowering_target.name,
                 "target_operator_type": lowering_target.operator_type_qualname,

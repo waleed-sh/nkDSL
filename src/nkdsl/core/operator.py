@@ -192,6 +192,7 @@ class SymbolicOperator(AbstractSymbolicOperator):
         backend: str = "jax",
         operator_lowering: str | None = None,
         deduplicate_connected_components: bool = True,
+        optimize_kernels: bool | None = None,
         cache: bool = True,
         compiler: Any = None,
     ) -> Any:  # -> CompiledOperator
@@ -205,6 +206,8 @@ class SymbolicOperator(AbstractSymbolicOperator):
             deduplicate_connected_components: Whether to merge duplicate
                 connected states and drop zero matrix elements. Static analysis
                 derives the output capacity and plans residual runtime checks.
+            optimize_kernels: Whether to use structured kernel planning. ``None``
+                inherits the compiler default (enabled). Disable for reference lowering.
             cache: Whether to cache the compiled artifact in the process-level store.
             compiler: Optional :class:`~nkdsl.compiler.SymbolicCompiler`
                 instance.  When ``None`` the module-level shared compiler is used.
@@ -224,6 +227,7 @@ class SymbolicOperator(AbstractSymbolicOperator):
                 backend_preference=backend,
                 operator_lowering=operator_lowering,
                 deduplicate_connected_components=deduplicate_connected_components,
+                optimize_kernels=True if optimize_kernels is None else optimize_kernels,
                 cache_enabled=cache,
             )
         )
@@ -237,11 +241,22 @@ class SymbolicOperator(AbstractSymbolicOperator):
             deduplicate_connected_components=deduplicate_connected_components,
             cache=cache,
         )
-        if compiler is not None and operator_lowering is not None:
+        if compiler is not None and (operator_lowering is not None or optimize_kernels is not None):
             from dataclasses import replace
 
             return c.compile_operator(
-                self, options=replace(c.options, operator_lowering=operator_lowering)
+                self,
+                options=replace(
+                    c.options,
+                    **{
+                        key: value
+                        for key, value in {
+                            "operator_lowering": operator_lowering,
+                            "optimize_kernels": optimize_kernels,
+                        }.items()
+                        if value is not None
+                    },
+                ),
             )
         return c.compile_operator(self)
 

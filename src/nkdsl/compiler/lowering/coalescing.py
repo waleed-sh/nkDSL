@@ -167,6 +167,7 @@ def make_planned_coalescer(
     Returns:
         Callable accepting target rows, matrix elements, and validity flags.
     """
+    finish = make_grouped_coalescer(plan)
     representatives = np.asarray([g[0] for g in plan.groups], dtype=np.int32)
     direct = len(plan.groups) == plan.raw_size and all(g == (i,) for i, g in enumerate(plan.groups))
     by_width: dict[int, list[int]] = {}
@@ -198,7 +199,25 @@ def make_planned_coalescer(
                 values = weighted[members]
                 parts.append(values[:, 0] if members.shape[1] == 1 else jnp.sum(values, axis=1))
             grouped_mels = jnp.concatenate(parts)[restore]
-        compatible = _proofs_apply(xp.dtype, plan)
+        return finish(grouped_xp, grouped_mels)
+
+    return coalesce
+
+
+def make_grouped_coalescer(
+    plan: ConnectivityDeduplicationPlan,
+) -> Callable[[Any, Any], tuple[Any, Any]]:
+    """Builds exact assembly for targets whose amplitudes are already grouped.
+
+    Args:
+        plan: Target classes, collision obligations, and output capacity.
+
+    Returns:
+        Callable accepting one target and typed amplitude per target class.
+    """
+
+    def finish(grouped_xp: Any, grouped_mels: Any) -> tuple[Any, Any]:
+        compatible = _proofs_apply(grouped_xp.dtype, plan)
         if compatible:
             for indices, columns, ranges in zip(
                 plan.collision_components,
@@ -210,7 +229,9 @@ def make_planned_coalescer(
                 whole = indices == tuple(range(len(plan.groups)))
                 if whole:
                     keys = (
-                        grouped_xp if columns == tuple(range(xp.shape[-1])) else grouped_xp[:, cols]
+                        grouped_xp
+                        if columns == tuple(range(grouped_xp.shape[-1]))
+                        else grouped_xp[:, cols]
                     )
                     component_mels = grouped_mels
                 else:
@@ -240,11 +261,12 @@ def make_planned_coalescer(
             return compact_connections(grouped_xp, grouped_mels, plan.output_size)
         return grouped_xp, grouped_mels
 
-    return coalesce
+    return finish
 
 
 __all__ = [
     "coalesce_connected_components",
     "compact_connections",
     "make_planned_coalescer",
+    "make_grouped_coalescer",
 ]

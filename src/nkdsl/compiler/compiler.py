@@ -80,6 +80,7 @@ class SymbolicCompiler:
         deduplicate_connected_components: Convenience override for
             ``options.deduplicate_connected_components``.
         operator_lowering: Convenience override for ``options.operator_lowering``.
+        optimize_kernels: Convenience override for ``options.optimize_kernels``.
     """
 
     def __init__(
@@ -94,6 +95,7 @@ class SymbolicCompiler:
         cache_enabled: bool | None = None,
         deduplicate_connected_components: bool | None = None,
         operator_lowering: str | None = None,
+        optimize_kernels: bool | None = None,
     ) -> None:
         from nkdsl.compiler.cache.store import InMemorySymbolicArtifactStore
         from nkdsl.compiler.defaults import (
@@ -125,37 +127,18 @@ class SymbolicCompiler:
             or cache_enabled is not None
             or deduplicate_connected_components is not None
             or operator_lowering is not None
+            or optimize_kernels is not None
         ):
-            resolved_options = SymbolicCompilerOptions(
-                backend_preference=(
-                    backend_preference
-                    if backend_preference is not None
-                    else resolved_options.backend_preference
-                ),
-                deduplicate_connected_components=(
-                    deduplicate_connected_components
-                    if deduplicate_connected_components is not None
-                    else resolved_options.deduplicate_connected_components
-                ),
-                enable_fusion=resolved_options.enable_fusion,
-                strict_validation=resolved_options.strict_validation,
-                cache_enabled=(
-                    cache_enabled if cache_enabled is not None else resolved_options.cache_enabled
-                ),
-                cache_namespace=resolved_options.cache_namespace,
-                operator_lowering=(
-                    operator_lowering
-                    if operator_lowering is not None
-                    else resolved_options.operator_lowering
-                ),
-                diagnostics_enabled=resolved_options.diagnostics_enabled,
-                diagnostics_min_severity=resolved_options.diagnostics_min_severity,
-                fail_on_warnings=resolved_options.fail_on_warnings,
-                max_diagnostics=resolved_options.max_diagnostics,
-                lint_state_sample_size=resolved_options.lint_state_sample_size,
-                lint_branch_sample_cap=resolved_options.lint_branch_sample_cap,
-                lint_max_exact_hilbert_states=resolved_options.lint_max_exact_hilbert_states,
-                debug_flags=resolved_options.debug_flags,
+            overrides: dict[str, Any] = {
+                "backend_preference": backend_preference,
+                "cache_enabled": cache_enabled,
+                "deduplicate_connected_components": deduplicate_connected_components,
+                "operator_lowering": operator_lowering,
+                "optimize_kernels": optimize_kernels,
+            }
+            resolved_options = dataclasses.replace(
+                resolved_options,
+                **{key: value for key, value in overrides.items() if value is not None},
             )
         self._options = resolved_options
 
@@ -269,7 +252,10 @@ class SymbolicCompiler:
             sig = SymbolicCompilationSignature.from_context(context)
             cache_key = sig.build_cache_key(
                 namespace=effective_options.cache_namespace,
-                extension_context={"operator_lowering_target": lowering_target.cache_signature},
+                extension_context={
+                    "operator_lowering_target": lowering_target.cache_signature,
+                    "hilbert_identity": id(operator.hilbert),
+                },
             )
             cached = self._store.get(cache_key)
             if cached is not None:

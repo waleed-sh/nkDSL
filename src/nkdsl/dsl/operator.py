@@ -1211,6 +1211,7 @@ class SymbolicDiscreteJaxOperator:
         backend: str = "jax",
         operator_lowering: str | None = None,
         deduplicate_connected_components: bool = True,
+        optimize_kernels: bool | None = None,
         cache: bool = True,
     ) -> Any:
         """
@@ -1221,6 +1222,7 @@ class SymbolicDiscreteJaxOperator:
             operator_lowering: Target name for this compilation, or ``None``
                 to use ``nkdsl.config.LOWERING``. Does not change the default.
             deduplicate_connected_components: Whether to merge repeated targets.
+            optimize_kernels: Whether to use structured kernel planning.
             cache: Whether to reuse in-process compiled artifacts.
 
         Returns:
@@ -1234,6 +1236,7 @@ class SymbolicDiscreteJaxOperator:
             backend=backend,
             operator_lowering=operator_lowering,
             deduplicate_connected_components=deduplicate_connected_components,
+            optimize_kernels=optimize_kernels,
             cache=cache,
         )
         return self.build().compile(

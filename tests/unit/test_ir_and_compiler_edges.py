@@ -347,6 +347,7 @@ def test_context_defaults_and_compiler_failure_paths():
         "symbolic_deduplication",
         "symbolic_connectivity_cost",
         "symbolic_fusion_planning",
+        "symbolic_kernel_planning",
     )
     assert "jax_symbolic_v1" in default_symbolic_lowerer_registry().lowerer_names
 

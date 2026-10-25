@@ -161,6 +161,8 @@ class SymbolicOperatorIR:
                     "name": t.name,
                     "iterator": {
                         "kind": t.iterator.kind,
+                        "labels": list(t.iterator.labels),
+                        "index_sets": [list(row) for row in t.iterator.index_sets],
                         "label_a": t.iterator.label_a,
                         "label_b": t.iterator.label_b,
                     },
